@@ -1453,7 +1453,7 @@ function renderPopup(teacherObj, day, period, entry){
     if(popupTab==='swap'){
       swapModalBody.querySelectorAll('.swap-cand').forEach((el,i)=>{
         const c = candidates[i];
-        el.addEventListener('click', ()=> renderSwapPreview(teacherObj, day, period, entry, c));
+        el.addEventListener('click', ()=>{ modalDepth=2; history.pushState({modalDepth:2}, ''); renderSwapPreview(teacherObj, day, period, entry, c); });
         el.addEventListener('mouseenter', ()=>{
           const cell = swapModalBody.querySelector(`.gt-cell[data-day="${c.day}"][data-period="${c.period}"]`);
           if(cell) cell.classList.add('cell-blink');
@@ -1465,7 +1465,7 @@ function renderPopup(teacherObj, day, period, entry){
       });
     } else {
       swapModalBody.querySelectorAll('.cover-cand').forEach(el=>{
-        el.addEventListener('click', ()=> renderCoverPreview(teacherObj, day, period, entry, el.dataset.coverTeacher));
+        el.addEventListener('click', ()=>{ modalDepth=2; history.pushState({modalDepth:2}, ''); renderCoverPreview(teacherObj, day, period, entry, el.dataset.coverTeacher); });
       });
     }
   }, 'medium');
@@ -1492,7 +1492,7 @@ function renderCoverPreview(teacherObj, day, period, entry, candName){
     <div class="swap-note">🟢 신규 = 이번에 새로 보강을 맡게 되는 칸입니다. 그 날 다른 수업들과 겹치거나 너무 몰리지 않는지 확인해보세요. 실제 보강 요청은 학교 협의 절차를 따로 거쳐야 해요.</div>
   `;
   setModalContent(html, ()=>{
-    document.getElementById('coverBackBtn').addEventListener('click', ()=> renderPopup(teacherObj, day, period, entry));
+    document.getElementById('coverBackBtn').addEventListener('click', ()=> history.back());
     const buildMsg = ()=> `안녕하세요, 선생님. ${teacherObj.name}입니다.\n\n${day} ${period}교시(${entry.class||''}) 수업 보강 가능하실까요?\n\n가능하시면 말씀해 주시면 감사하겠습니다.`;
     wireRequestButtons('copyCoverReqBtn', 'shareCoverReqBtn', buildMsg);
   }, 'medium');
@@ -1506,6 +1506,7 @@ swapModalBody.addEventListener('click', e=>{
   const period2 = parseInt(cell.dataset.period, 10);
   const entry2 = (swapContextTeacher.schedule[day2]||[]).find(x=>x.period===period2);
   if(!entry2 || !entry2.class) return;
+  lastListArgs = {teacherObj:swapContextTeacher, day:day2, period:period2, entry:entry2};
   renderPopup(swapContextTeacher, day2, period2, entry2);
 });
 
@@ -1539,19 +1540,43 @@ function renderSwapPreview(teacherObj, day, period, entry, cand){
     <div class="swap-note">🟡 비워짐 = 원래 있던 수업이 빠지는 칸 · 🟢 신규 = 교체로 새로 들어오는 칸. 실제 교체는 학교 협의 절차를 따로 거쳐야 해요.</div>
   `;
   setModalContent(html, ()=>{
-    document.getElementById('swapBackBtn').addEventListener('click', ()=> renderPopup(teacherObj, day, period, entry));
+    document.getElementById('swapBackBtn').addEventListener('click', ()=> history.back());
     const buildMsg = ()=> `안녕하세요, 선생님. ${teacherObj.name}입니다.\n\n${day} ${period}교시(${entry.class||''}) ↔ ${cand.day} ${cand.period}교시(${entry.class||''}) 수업 교체 가능하실까요?\n\n가능하시면 말씀해 주시면 감사하겠습니다.`;
     wireRequestButtons('copySwapReqBtn', 'shareSwapReqBtn', buildMsg);
   }, 'wide');
 }
 
+// ---- 모바일 뒤로가기(하드웨어/제스처) 버튼이 팝업을 자연스럽게 닫거나 이전 화면으로 가도록 ----
+let modalDepth = 0; // 0=닫힘, 1=목록(교체/보강), 2=미리보기
+let lastListArgs = null;
+
 function openSwapModal(teacherObj, day, period, entry){
   popupTab = 'swap';
+  lastListArgs = {teacherObj, day, period, entry};
   renderPopup(teacherObj, day, period, entry);
   swapModal.classList.add('open');
+  modalDepth = 1;
+  history.pushState({modalDepth:1}, '');
 }
 
-function closeSwapModal(){ swapModal.classList.remove('open'); swapModal.classList.remove('wide'); swapModal.classList.remove('medium'); }
+function closeSwapModal(){
+  if(modalDepth > 0){
+    history.go(-modalDepth);
+  }
+}
+
+window.addEventListener('popstate', (e)=>{
+  const newDepth = (e.state && e.state.modalDepth) || 0;
+  if(newDepth >= modalDepth) return; // 우리가 다루는 뒤로가기가 아니면 무시
+  modalDepth = newDepth;
+  if(modalDepth === 0){
+    swapModal.classList.remove('open');
+    swapModal.classList.remove('wide');
+    swapModal.classList.remove('medium');
+  } else if(modalDepth === 1 && lastListArgs){
+    renderPopup(lastListArgs.teacherObj, lastListArgs.day, lastListArgs.period, lastListArgs.entry);
+  }
+});
 
 document.getElementById('swapModalClose').addEventListener('click', closeSwapModal);
 swapModal.addEventListener('click', e=>{ if(e.target===swapModal) closeSwapModal(); });
