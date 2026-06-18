@@ -1550,6 +1550,9 @@ function renderSwapPreview(teacherObj, day, period, entry, cand){
 let modalDepth = 0; // 0=닫힘, 1=목록(교체/보강), 2=미리보기
 let lastListArgs = null;
 
+// 모달이 닫혀있을 때 뒤로가기를 누르면 바로 앱이 꺼지지 않도록, 기준점을 하나 심어둠
+history.pushState({root:true}, '');
+
 function openSwapModal(teacherObj, day, period, entry){
   popupTab = 'swap';
   lastListArgs = {teacherObj, day, period, entry};
@@ -1567,14 +1570,23 @@ function closeSwapModal(){
 
 window.addEventListener('popstate', (e)=>{
   const newDepth = (e.state && e.state.modalDepth) || 0;
-  if(newDepth >= modalDepth) return; // 우리가 다루는 뒤로가기가 아니면 무시
-  modalDepth = newDepth;
-  if(modalDepth === 0){
-    swapModal.classList.remove('open');
-    swapModal.classList.remove('wide');
-    swapModal.classList.remove('medium');
-  } else if(modalDepth === 1 && lastListArgs){
-    renderPopup(lastListArgs.teacherObj, lastListArgs.day, lastListArgs.period, lastListArgs.entry);
+  if(newDepth < modalDepth){
+    modalDepth = newDepth;
+    if(modalDepth === 0){
+      swapModal.classList.remove('open');
+      swapModal.classList.remove('wide');
+      swapModal.classList.remove('medium');
+    } else if(modalDepth === 1 && lastListArgs){
+      renderPopup(lastListArgs.teacherObj, lastListArgs.day, lastListArgs.period, lastListArgs.entry);
+    }
+    return;
+  }
+  // 모달이 닫혀있는데 더 뒤로 가려는 경우 = 우리가 심어둔 기준점을 막 지난 상태 → 종료 확인
+  if(modalDepth === 0 && !(e.state && e.state.root)){
+    const wantsExit = confirm('앱을 종료하시겠습니까?');
+    if(!wantsExit){
+      history.pushState({root:true}, ''); // 종료를 취소하면 기준점을 다시 심어둠
+    }
   }
 });
 
