@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영남고 시간표 조회 프로그램</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1F3D33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="시간표조회">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --bg-base:#1F3D33;
+    --bg-base-soft:#274A3E;
+    --paper:#FBF6EC;
+    --paper-soft:#F2ECDD;
+    --ink:#232A22;
+    --ink-soft:#6B7468;
+    --rule:#D9D0BB;
+
+    --mon:#8C2F39;
+    --tue:#B08D57;
+    --wed:#2F5D62;
+    --thu:#3B5170;
+    --fri:#6B7A3A;
+
+    --gold:#B08D57;
+    --today-tint:#F3E6C5;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-base);
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.04), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(255,255,255,0.03), transparent 45%);
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    position:relative;
+    background:var(--paper);
+    border-radius:4px;
+    padding:26px 30px 22px;
+    box-shadow:0 18px 40px -18px rgba(0,0,0,0.55);
+  }
+  .masthead::before, .masthead::after{
+    content:"";
+    position:absolute;
+    width:11px;height:11px;border-radius:50%;
+    top:-5px;
+    background:radial-gradient(circle at 35% 30%, #e8c46b, var(--gold) 70%);
+    box-shadow:0 3px 4px rgba(0,0,0,0.35);
+  }
+  .masthead::before{left:26px;}
+  .masthead::after{right:26px;}
+  .winsize-group{
+    position:absolute;top:14px;right:14px;
+    display:flex;gap:5px;z-index:5;
+  }
+  .winsize-btn{
+    height:28px;padding:0 10px;border-radius:7px;
+    border:1px solid var(--rule);background:var(--paper-soft);
+    color:var(--ink-soft);font-size:11.5px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    white-space:nowrap;
+  }
+  .winsize-btn:hover{background:var(--rule);color:var(--ink);}
+  .school{
+    font-size:13px;
+    letter-spacing:0.04em;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  h1{
+    font-family:'Noto Serif KR', serif;
+    font-weight:900;
+    font-size:clamp(24px,4vw,32px);
+    margin:4px 0 12px;
+    color:var(--ink);
+  }
+  .rule{height:3px;background:linear-gradient(90deg,var(--mon),var(--tue),var(--wed),var(--thu),var(--fri));border-radius:2px;}
+
+  /* ---------- controls ---------- */
+  .controls{
+    margin-top:18px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .tabs{display:flex;gap:6px;background:var(--paper-soft);padding:4px;border-radius:8px;}
+  .tab-btn{
+    border:none;background:transparent;
+    font-family:'Noto Sans KR';font-weight:700;font-size:14px;
+    padding:8px 14px;border-radius:6px;cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .tab-btn.active{background:var(--paper);color:var(--mon);box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+
+  .search-box{
+    position:relative;flex:1;min-width:220px;
+  }
+  .search-box input{
+    width:100%;
+    font-family:'Noto Sans KR';font-size:15px;
+    padding:10px 14px;
+    border:1.5px solid var(--rule);
+    border-radius:8px;
+    background:var(--paper);
+    color:var(--ink);
+    outline:none;
+  }
+  .search-box input:focus{border-color:var(--mon);}
+
+  .class-select-box{display:flex;gap:8px;flex:1;min-width:220px;}
+  .class-select-box select{
+    flex:1;
+    font-family:'Noto Sans KR';font-size:15px;font-weight:500;
+    padding:10px 12px;
+    border:1.5px solid var(--rule);
+    border-radius:8px;
+    background:var(--paper);
+    color:var(--ink);
+    outline:none;
+    cursor:pointer;
+  }
+  .class-select-box select:focus{border-color:var(--mon);}
+  .dropdown{
+    position:absolute;left:0;right:0;top:calc(100% + 6px);
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    max-height:260px;overflow-y:auto;
+    box-shadow:0 14px 30px -10px rgba(0,0,0,0.4);
+    z-index:20;
+    display:none;
+  }
+  .dropdown.open{display:block;}
+
+  /* ---------- card ---------- */
+  .card{
+    margin-top:16px;
+    background:var(--paper);
+    border-radius:4px;
+    padding:24px 24px 8px;
+    box-shadow:0 18px 40px -20px rgba(0,0,0,0.5);
+    min-height:160px;
+  }
+  .placeholder{
+    color:var(--ink-soft);
+    text-align:center;
+    padding:60px 10px;
+    font-size:14.5px;
+    line-height:1.7;
+  }
+  .placeholder b{color:var(--ink);}
+
+  .info-row{
+    display:flex;flex-wrap:wrap;gap:10px;
+    align-items:baseline;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--rule);
+    margin-bottom:18px;
+  }
+  .info-name{
+    font-family:'Noto Serif KR';font-weight:900;font-size:22px;
+  }
+  .chip{
+    font-family:'IBM Plex Mono';font-size:12px;font-weight:600;
+    background:var(--paper-soft);color:var(--ink-soft);
+    padding:4px 9px;border-radius:20px;
+  }
+  .chip.accent{color:var(--mon);}
+  .chip.ext-chip{background:rgba(47,93,98,0.12);color:var(--wed);font-size:15px;font-weight:700;padding:5px 12px;}
+  .print-btn{
+    margin-left:auto;border:1.5px solid var(--rule);background:var(--paper-soft);
+    color:var(--ink-soft);font-family:'Noto Sans KR';font-weight:700;font-size:12.5px;
+    padding:6px 13px;border-radius:20px;cursor:pointer;
+  }
+  .print-btn:hover{background:var(--rule);color:var(--ink);}
+
+  /* ---------- week grid: rounded tile system (fully fluid via container queries) ---------- */
+  .table-wrap{
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding:14px 0 4px;
+    container-type:inline-size;
+  }
+  .grid-table{
+    display:grid;
+    grid-template-columns:clamp(22px,9cqw,46px) repeat(5, minmax(0,1fr));
+    gap:clamp(3px,1.1cqw,6px);
+    width:100%;
+  }
+
+  .gt-corner{
+    background:var(--paper);
+    border:1px dashed var(--rule);
+    border-radius:8px;
+    display:flex;align-items:center;
+    padding:4px clamp(2px,2cqw,10px);
+    font-family:'Noto Serif KR';font-weight:700;font-size:clamp(9px,2.6cqw,13px);color:var(--ink);
+    line-height:1.2;white-space:normal;word-break:keep-all;
+    min-height:clamp(34px,9cqw,44px);
+  }
+  .gt-head{
+    border-radius:8px;
+    color:#fff;font-family:'Noto Serif KR';font-weight:700;font-size:clamp(10.5px,3.4cqw,14px);
+    display:flex;align-items:center;justify-content:center;
+    min-height:clamp(34px,9cqw,44px);position:relative;
+  }
+  .gt-head[data-day="월"]{background:var(--mon);}
+  .gt-head[data-day="화"]{background:var(--tue);}
+  .gt-head[data-day="수"]{background:var(--wed);}
+  .gt-head[data-day="목"]{background:var(--thu);}
+  .gt-head[data-day="금"]{background:var(--fri);}
+  .gt-head .today-tag{
+    position:absolute;top:-11px;right:-4px;
+    background:var(--ink);color:#fff;font-family:'Noto Sans KR';
+    font-size:9px;font-weight:700;padding:2px 7px;border-radius:9px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.3);
+    white-space:nowrap;
+  }
+  @container (max-width:340px){
+    .gt-head .today-tag{display:none;}
+    .gt-corner{visibility:hidden;}
+  }
+
+  .gt-pnum{
+    background:var(--paper-soft);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono';font-weight:700;font-size:clamp(10px,3cqw,13px);color:var(--ink-soft);
+    min-height:clamp(40px,11cqw,58px);
+  }
+  .gt-lunch-label{
+    background:var(--paper-soft);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Noto Sans KR';font-style:italic;font-weight:600;font-size:clamp(8px,2.4cqw,11px);color:var(--ink-soft);
+    min-height:clamp(20px,5cqw,26px);
+  }
+
+  .gt-cell{
+    background:#fff;border-radius:8px;
+    min-height:clamp(40px,11cqw,58px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:4px 2px;text-align:center;
+    border:1.5px solid transparent;
+  }
+  .gt-cell.today{background:var(--today-tint);}
+  .gt-cell.now{
+    background:#FFF8E3;
+    border-color:#E8A93A;
+    box-shadow:0 0 0 3px rgba(232,169,58,0.18);
+  }
+  .gt-lunch-cell{background:#fff;border-radius:8px;min-height:clamp(20px,5cqw,26px);}
+  .gt-lunch-cell.today{background:var(--today-tint);}
+  .gt-lunch-cell.now{background:#FFF8E3;border:1.5px solid #E8A93A;}
+
+  .cell-subject{font-size:clamp(9.5px,3cqw,13px);font-weight:700;line-height:1.25;word-break:keep-all;color:var(--ink);}
+  .cell-class{font-family:'IBM Plex Mono';font-size:clamp(7.5px,2.2cqw,10.5px);color:var(--ink-soft);margin-top:2px;}
+  .cell-empty{color:#cfc9b8;font-size:clamp(10px,2.8cqw,14px);}
+  .now-badge{
+    font-size:clamp(6.5px,1.8cqw,8.5px);color:#92611a;font-weight:700;
+    margin-top:3px;letter-spacing:0.04em;
+  }
+
+  .gt-cell.swappable{cursor:pointer;transition:box-shadow 0.15s;}
+  .gt-cell.swappable:hover{box-shadow:0 0 0 2px var(--mon) inset;}
+  .gt-cell.locked{background:#F1EFE8;border:1.5px dashed var(--rule);cursor:default;}
+  .lock-badge{
+    font-size:clamp(6.5px,1.8cqw,8.5px);color:var(--ink-soft);font-weight:700;
+    margin-top:3px;letter-spacing:0.02em;
+  }
+  .swap-hint{
+    text-align:center;font-size:12px;color:var(--ink-soft);
+    margin:14px 0 6px;font-style:italic;
+  }
+
+  .modal-overlay{
+    display:flex;position:fixed;inset:0;
+    background:rgba(20,24,18,0.55);
+    align-items:center;justify-content:center;
+    padding:20px;z-index:100;
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity 0.18s ease, visibility 0s 0.18s;
+  }
+  .modal-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity 0.18s ease;}
+  .modal-box{
+    background:var(--paper);border-radius:10px;
+    max-width:460px;width:100%;max-height:88vh;overflow-y:auto;
+    padding:26px 24px 22px;position:relative;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);
+    transform:scale(0.95);transition:transform 0.18s ease;
+  }
+  .modal-overlay.open .modal-box{transform:scale(1);}
+  .modal-overlay.wide .modal-box{max-width:min(1150px, 92vw);}
+  .modal-overlay.medium .modal-box{max-width:min(900px, 92vw);}
+
+  .modal-close{
+    position:absolute;top:12px;right:14px;
+    border:none;background:none;font-size:22px;line-height:1;
+    color:var(--ink-soft);cursor:pointer;padding:4px;
+  }
+  .popup-tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .popup-tab-btn{
+    border:1.5px solid var(--rule);background:var(--paper-soft);
+    color:var(--ink-soft);font-family:'Noto Sans KR';font-weight:700;font-size:13.5px;
+    padding:7px 18px;border-radius:7px;cursor:pointer;
+  }
+  .popup-tab-btn.active{background:var(--mon);border-color:var(--mon);color:#fff;}
+  .dept-divider{height:1px;background:var(--rule);margin:8px 4px;}
+  .modal-title{font-family:'Noto Serif KR';font-weight:700;font-size:17px;color:var(--ink);margin-bottom:4px;}
+  .modal-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5;}
+  .swap-list{display:flex;flex-direction:column;gap:8px;}
+  .swap-cand{
+    background:var(--paper-soft);border-radius:8px;padding:10px 12px;
+    border-left:3px solid var(--mon);cursor:pointer;transition:background 0.15s;
+  }
+  .swap-cand:hover{background:#fff;box-shadow:0 0 0 1.5px var(--mon) inset;}
+
+  .copy-req-btn{
+    margin-top:6px;border:1.5px solid var(--mon);background:#fff;color:var(--mon);
+    font-family:'Noto Sans KR';font-weight:700;font-size:11.5px;
+    padding:5px 11px;border-radius:16px;cursor:pointer;
+  }
+  .copy-req-btn:hover{background:var(--mon);color:#fff;}
+  .swap-cand-name{font-weight:700;font-size:14px;color:var(--ink);}
+  .swap-cand-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .swap-cand-arrow{font-size:11px;color:var(--mon);font-weight:700;margin-top:5px;text-align:right;}
+  .swap-empty{color:var(--ink-soft);font-size:13.5px;padding:10px 2px;}
+  .swap-note{font-size:11px;color:var(--ink-soft);margin-top:14px;line-height:1.6;}
+
+  .swap-back{
+    border:none;background:var(--paper-soft);color:var(--ink);
+    font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:7px;
+    cursor:pointer;margin-bottom:12px;
+  }
+  .swap-back:hover{background:var(--rule);}
+  .swap-preview-grids{display:flex;flex-direction:column;gap:18px;}
+  .preview-col{width:100%;}
+  .preview-col-single{max-width:600px;margin:0 auto;}
+  .preview-col-title{font-family:'Noto Serif KR';font-weight:700;font-size:17px;margin-bottom:8px;color:var(--ink);}
+  .preview-ext{font-family:'IBM Plex Mono';font-size:13px;font-weight:700;color:var(--wed);margin-left:4px;}
+  .gt-cell.preview-out{background:#FBEDE9;border-color:#C9544A;}
+  .gt-cell.preview-in{background:#EAF5E8;border-color:#4C9A52;box-shadow:0 0 0 2px rgba(76,154,82,0.18);}
+  .gt-cell.preview-origin{border-color:var(--mon);box-shadow:0 0 0 2px rgba(140,47,57,0.2);}
+  @keyframes cellBlink{
+    0%, 100% { background-color:#fff; box-shadow:0 0 0 0 rgba(176,141,87,0); }
+    50% { background-color:#FBEFCB; box-shadow:0 0 0 4px rgba(176,141,87,0.35); }
+  }
+  .gt-cell.cell-blink{ animation: cellBlink 1.3s ease-in-out infinite; }
+  .prev-out-label{font-size:10px;color:#A23B33;font-weight:700;}
+  .prev-in-badge{font-size:8px;color:#2E6B33;font-weight:700;margin-top:2px;letter-spacing:0.01em;}
+  .origin-badge{font-size:8px;color:var(--mon);font-weight:700;margin-top:2px;letter-spacing:0.01em;}
+  .swap-col-list .swap-list{margin-bottom:10px;}
+
+  .legend{
+    display:flex;gap:16px;flex-wrap:wrap;
+    margin:16px 2px 0;font-size:12px;color:var(--ink-soft);
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:13px;height:13px;border-radius:4px;display:inline-block;}
+
+  .footnote{
+    text-align:center;color:rgba(255,255,255,0.55);
+    font-size:12px;margin-top:22px;line-height:1.7;
+  }
+
+  /* ---------- layout: sidebar (tablet/desktop) + main ---------- */
+  .layout{margin-top:16px;}
+  .sidebar{display:none;}
+  .main{min-width:0;}
+
+  .sidebar-title{
+    font-family:'Noto Serif KR';font-weight:700;font-size:12.5px;
+    color:var(--ink-soft);padding:6px 10px 10px;
+  }
+  .list-item{
+    padding:9px 12px;cursor:pointer;font-size:14px;border-radius:6px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  }
+  .list-item span{font-weight:600;}
+  .list-item small{color:var(--ink-soft);font-family:'IBM Plex Mono';font-size:10.5px;white-space:nowrap;}
+  .list-item:hover, .list-item.hl{background:var(--paper-soft);}
+  .list-item.active{background:var(--mon);color:#fff;}
+  .list-item.active small{color:rgba(255,255,255,0.75);}
+  .list-empty{padding:14px;color:var(--ink-soft);font-size:13px;}
+
+  .sidebar-body{display:flex;gap:6px;}
+  .subject-col{display:none;}
+  .teacher-col{flex:1;min-width:0;}
+
+  .subject-item{
+    display:block;width:100%;text-align:left;
+    background:none;border:none;cursor:pointer;
+    padding:7px 6px;border-radius:6px;font-size:11.5px;font-weight:600;
+    color:var(--ink);line-height:1.3;white-space:normal;word-break:keep-all;
+  }
+  .subject-item:hover{background:var(--paper-soft);}
+  .subject-item.active{background:var(--mon);color:#fff;}
+
+  .subject-chip-row{display:none;}
+  .subject-chip{
+    flex-shrink:0;padding:6px 13px;border-radius:20px;
+    border:1.5px solid var(--rule);background:var(--paper);
+    font-size:12.5px;font-weight:600;color:var(--ink);
+    cursor:pointer;white-space:nowrap;
+  }
+  .subject-chip.active{background:var(--mon);border-color:var(--mon);color:#fff;}
+
+  @media (min-width:700px){
+    .layout{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:stretch;}
+    .main{display:flex;flex-direction:column;}
+    .card{flex:1;margin-top:0;}
+    .sidebar{
+      display:block;
+      background:var(--paper);border-radius:8px;
+      padding:8px;max-height:74vh;overflow-y:auto;
+      box-shadow:0 14px 30px -18px rgba(0,0,0,0.45);
+      position:sticky;top:16px;
+    }
+    .sidebar.two-col{overflow:hidden;height:100%;max-height:74vh;}
+    .sidebar.two-col .sidebar-body{height:calc(100% - 28px);}
+    .sidebar.two-col .subject-col{
+      display:block;width:106px;flex-shrink:0;
+      overflow-y:auto;height:100%;
+      border-right:1px solid var(--rule);padding-right:8px;
+    }
+    .sidebar.two-col .teacher-col{overflow-y:auto;height:100%;padding-left:4px;}
+    .dropdown{display:none !important;}
+    .swap-preview-grids{flex-direction:row;}
+    .preview-col{flex:1;min-width:0;}
+    .preview-col.swap-col-list{flex:0 1 300px;}
+  }
+
+  /* ---------- phone: tighter page padding ---------- */
+  @media (max-width:699px){
+    .masthead, .card{padding-left:16px;padding-right:16px;}
+    .info-name{font-size:18px;}
+  }
+  @media print{
+    body{background:#fff !important;padding:0;}
+    .masthead::before, .masthead::after{display:none;}
+    .masthead .controls, .subject-chip-row, .winsize-group{display:none !important;}
+    .layout{display:block !important;margin-top:10px;}
+    .sidebar{display:none !important;}
+    .main{display:block !important;}
+    .card{box-shadow:none;border:none;padding:0;margin-top:6px;}
+    .print-btn, .swap-hint, .legend{display:none !important;}
+    .masthead{box-shadow:none;padding:8px 0;}
+    .masthead h1{display:none !important;}
+    .modal-overlay{display:none !important;}
+    .chip.ext-chip, .chip.accent{display:none !important;}
+
+    /* 배경색이 인쇄되지 않는 경우에도 표가 구분되어 보이도록 테두리는 항상 추가 */
+    .grid-table .gt-cell, .grid-table .gt-pnum, .grid-table .gt-lunch-cell,
+    .grid-table .gt-lunch-label, .grid-table .gt-corner, .grid-table .gt-head{
+      border:1px solid #777 !important;
+    }
+    /* 요일 헤더는 색이 그대로 인쇄되도록 강제 */
+    .gt-head{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .gt-pnum, .gt-lunch-label, .gt-corner{background:#fff !important;color:#222 !important;}
+
+    /* 오늘/지금 표시와 음영은 인쇄물에서는 의미가 없으므로 모두 제거 */
+    .today-tag, .now-badge{display:none !important;}
+    .gt-cell.today, .gt-lunch-cell.today{background:#fff !important;}
+    .gt-cell.now{background:#fff !important;border-color:#777 !important;box-shadow:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="winsize-group" id="winsizeGroup" style="display:none;">
+      <button class="winsize-btn" data-size="small" title="작게">작게</button>
+      <button class="winsize-btn" data-size="large" title="크게">크게</button>
+      <button class="winsize-btn" data-size="max" title="전체화면">전체</button>
+    </div>
+    <div class="school">영남고등학교 · 2026학년도 1학기</div>
+    <h1>시간표 조회 프로그램</h1>
+    <div class="rule"></div>
+
+    <div class="controls">
+      <div class="tabs">
+        <button class="tab-btn active" data-mode="teacher">교사별 보기</button>
+        <button class="tab-btn" data-mode="class">학급별 보기</button>
+      </div>
+      <div class="search-box" id="teacherSearchBox">
+        <input id="searchInput" type="text" autocomplete="off" placeholder="교사 이름을 입력하세요">
+        <div class="dropdown" id="dropdown"></div>
+      </div>
+      <div class="class-select-box" id="classSelectBox" style="display:none;">
+        <select id="gradeSelect"><option value="">학년 선택</option></select>
+        <select id="roomSelect"><option value="">반 선택</option></select>
+      </div>
+    </div>
+    <div class="subject-chip-row" id="subjectChipRow"></div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebarPanel">
+      <div class="sidebar-title" id="sidebarTitle">교사 목록 (82)</div>
+      <div class="sidebar-body" id="sidebarBody">
+        <div class="subject-col" id="subjectCol"></div>
+        <div class="teacher-col"><div id="sidebarList"></div></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="card" id="card">
+        <div class="placeholder">검색창에 <b>선생님 이름</b>을 입력하거나, 위 탭에서 <b>학급별 보기</b>로 전환해 보세요.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--today-tint)"></i>오늘 요일</span>
+    <span><i style="background:#FFF8E3;border:1.5px solid #E8A93A;"></i>교시 시작 ±5분</span>
+    <span style="margin-left:4px;">— 표시는 해당 시간에 등록된 수업이 없음을 의미합니다</span>
+  </div>
+</div>
+
+<div class="modal-overlay" id="swapModal">
+  <div class="modal-box">
+    <button class="modal-close" id="swapModalClose">×</button>
+    <div id="swapModalBody"></div>
+  </div>
+</div>
+
+<script>
+const TEACHERS = [{"no": "1", "name": "최영수", "schedule": {"월": [{"period": 2, "subject": "문개", "class": "3-10"}, {"period": 3, "subject": "문개", "class": "3-8"}, {"period": 5, "subject": "문개", "class": "3-11"}, {"period": 7, "subject": "문개", "class": "3-9"}], "화": [{"period": 2, "subject": "문개", "class": "3-4"}, {"period": 3, "subject": "문개", "class": "3-7"}, {"period": 5, "subject": "문개", "class": "3-6"}, {"period": 7, "subject": "문개", "class": "3-5"}], "수": [{"period": 3, "subject": "문개", "class": "3-9"}, {"period": 4, "subject": "문개", "class": "3-10"}], "목": [{"period": 3, "subject": "문개", "class": "3-7"}, {"period": 4, "subject": "문개", "class": "3-11"}, {"period": 6, "subject": "문개", "class": "3-4"}], "금": [{"period": 2, "subject": "문개", "class": "3-6"}, {"period": 4, "subject": "문개", "class": "3-5"}, {"period": 6, "subject": "문개", "class": "3-8"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "2", "name": "이인태", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-1"}, {"period": 2, "subject": "문학", "class": "2-2"}, {"period": 4, "subject": "문학", "class": "2-4"}, {"period": 6, "subject": "문학", "class": "2-4"}], "화": [{"period": 1, "subject": "논술", "class": "3-14"}, {"period": 2, "subject": "문학", "class": "2-2"}, {"period": 5, "subject": "문학", "class": "2-1"}, {"period": 6, "subject": "문학", "class": "2-3"}], "수": [{"period": 3, "subject": "문학", "class": "2-3"}, {"period": 4, "subject": "논술", "class": "3-12"}, {"period": 7, "subject": "동아", "class": "2-1"}], "목": [{"period": 4, "subject": "문학", "class": "2-3"}, {"period": 6, "subject": "문학", "class": "2-1"}], "금": [{"period": 4, "subject": "문학", "class": "2-1"}, {"period": 6, "subject": "문학", "class": "2-4"}, {"period": 7, "subject": "문학", "class": "2-2"}]}, "total_hours": "16", "homeroom": "2-1", "remarks": null}, {"no": "3", "name": "윤익희", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-5"}, {"period": 2, "subject": "문학", "class": "2-6"}, {"period": 4, "subject": "문학", "class": "2-7"}, {"period": 6, "subject": "논술", "class": "3-10"}], "화": [{"period": 2, "subject": "문학", "class": "2-5"}, {"period": 5, "subject": "문학", "class": "2-6"}, {"period": 6, "subject": "문학", "class": "2-8"}], "수": [{"period": 2, "subject": "문학", "class": "2-7"}, {"period": 4, "subject": "문학", "class": "2-5"}, {"period": 7, "subject": "동아", "class": "2-5"}], "목": [{"period": 4, "subject": "문학", "class": "2-7"}, {"period": 7, "subject": "문학", "class": "2-8"}], "금": [{"period": 1, "subject": "문학", "class": "2-6"}, {"period": 3, "subject": "문학", "class": "2-8"}, {"period": 5, "subject": "논술", "class": "3-11"}, {"period": 7, "subject": "문학", "class": "2-5"}]}, "total_hours": "16", "homeroom": "2-5", "remarks": null}, {"no": "4", "name": "손병락", "schedule": {"월": [{"period": 2, "subject": "공국1", "class": "1-13"}, {"period": 4, "subject": "공국1", "class": "1-9"}, {"period": 6, "subject": "문개", "class": "3-2"}], "화": [{"period": 1, "subject": "문개", "class": "3-1"}, {"period": 3, "subject": "공국1", "class": "1-11"}, {"period": 4, "subject": "공국1", "class": "1-12"}, {"period": 6, "subject": "공국1", "class": "1-8"}], "수": [{"period": 2, "subject": "공국1", "class": "1-8"}, {"period": 3, "subject": "문개", "class": "3-2"}, {"period": 5, "subject": "공국1", "class": "1-10"}], "목": [{"period": 2, "subject": "공국1", "class": "1-11"}, {"period": 4, "subject": "공국1", "class": "1-9"}, {"period": 6, "subject": "공국1", "class": "1-12"}, {"period": 7, "subject": "문개", "class": "3-3"}], "금": [{"period": 1, "subject": "문개", "class": "3-3"}, {"period": 3, "subject": "공국1", "class": "1-10"}, {"period": 5, "subject": "문개", "class": "3-1"}, {"period": 7, "subject": "공국1", "class": "1-13"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "5", "name": "박재정", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-9"}, {"period": 3, "subject": "심국2", "class": "3-10"}, {"period": 5, "subject": "심국2", "class": "3-8"}, {"period": 7, "subject": "심국2", "class": "3-13"}], "화": [{"period": 2, "subject": "심국2", "class": "3-11"}, {"period": 3, "subject": "심국2", "class": "3-14"}, {"period": 5, "subject": "논술", "class": "3-9"}, {"period": 7, "subject": "심국2", "class": "3-12"}], "수": [{"period": 1, "subject": "심국2", "class": "3-10"}, {"period": 3, "subject": "논술", "class": "3-8"}, {"period": 4, "subject": "심국2", "class": "3-9"}], "목": [{"period": 4, "subject": "심국2", "class": "3-13"}, {"period": 6, "subject": "심국2", "class": "3-11"}], "금": [{"period": 1, "subject": "심국2", "class": "3-8"}, {"period": 3, "subject": "심국2", "class": "3-12"}, {"period": 5, "subject": "심국2", "class": "3-9"}, {"period": 6, "subject": "심국2", "class": "3-14"}]}, "total_hours": "17", "homeroom": "3-9", "remarks": null}, {"no": "6", "name": "김창식", "schedule": {"월": [{"period": 2, "subject": "공국2", "class": "1-2"}, {"period": 3, "subject": "공국2", "class": "1-5"}, {"period": 5, "subject": "공국2", "class": "1-4"}, {"period": 6, "subject": "공국2", "class": "1-6"}], "화": [{"period": 1, "subject": "공국2", "class": "1-3"}, {"period": 4, "subject": "문개", "class": "3-12"}, {"period": 6, "subject": "문개", "class": "3-14"}, {"period": 7, "subject": "문개", "class": "3-13"}], "수": [{"period": 1, "subject": "공국2", "class": "1-5"}, {"period": 3, "subject": "공국2", "class": "1-1"}, {"period": 4, "subject": "공국2", "class": "1-2"}], "목": [{"period": 3, "subject": "공국2", "class": "1-4"}, {"period": 4, "subject": "문개", "class": "3-14"}, {"period": 7, "subject": "문개", "class": "3-12"}], "금": [{"period": 2, "subject": "공국2", "class": "1-6"}, {"period": 4, "subject": "문개", "class": "3-13"}, {"period": 6, "subject": "공국2", "class": "1-3"}, {"period": 7, "subject": "공국2", "class": "1-1"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "7", "name": "남영동", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-2"}, {"period": 2, "subject": "공국1", "class": "1-7"}, {"period": 4, "subject": "공국1", "class": "1-5"}], "화": [{"period": 2, "subject": "공국1", "class": "1-1"}, {"period": 4, "subject": "공국1", "class": "1-6"}, {"period": 6, "subject": "공국1", "class": "1-2"}, {"period": 7, "subject": "공국1", "class": "1-4"}], "수": [{"period": 2, "subject": "공국1", "class": "1-4"}, {"period": 5, "subject": "공국1", "class": "1-3"}, {"period": 7, "subject": "동아", "class": "1-2"}], "목": [{"period": 2, "subject": "공국1", "class": "1-1"}, {"period": 4, "subject": "공국1", "class": "1-2"}, {"period": 6, "subject": "공국1", "class": "1-7"}], "금": [{"period": 1, "subject": "논술", "class": "3-5"}, {"period": 3, "subject": "공국1", "class": "1-3"}, {"period": 4, "subject": "공국1", "class": "1-5"}, {"period": 6, "subject": "공국1", "class": "1-6"}]}, "total_hours": "17", "homeroom": "1-2", "remarks": null}, {"no": "8", "name": "문광섭", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-4"}, {"period": 4, "subject": "심국1", "class": "3-3"}, {"period": 6, "subject": "심국1", "class": "3-5"}, {"period": 7, "subject": "심국1", "class": "3-2"}], "화": [{"period": 1, "subject": "논술", "class": "3-4"}, {"period": 4, "subject": "심국1", "class": "3-4"}, {"period": 6, "subject": "심국1", "class": "3-1"}, {"period": 7, "subject": "심국1", "class": "3-6"}], "수": [{"period": 1, "subject": "심국1", "class": "3-7"}, {"period": 2, "subject": "심국1", "class": "3-3"}, {"period": 4, "subject": "심국1", "class": "3-1"}], "목": [{"period": 3, "subject": "심국1", "class": "3-5"}, {"period": 5, "subject": "논술", "class": "3-3"}], "금": [{"period": 1, "subject": "심국1", "class": "3-2"}, {"period": 3, "subject": "심국1", "class": "3-6"}, {"period": 5, "subject": "심국1", "class": "3-4"}, {"period": 6, "subject": "심국1", "class": "3-7"}]}, "total_hours": "17", "homeroom": "3-4", "remarks": null}, {"no": "9", "name": "정희철", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-11"}, {"period": 2, "subject": "문학", "class": "2-11"}, {"period": 4, "subject": "문학", "class": "2-10"}, {"period": 5, "subject": "문학", "class": "2-12"}], "화": [{"period": 1, "subject": "문학", "class": "2-13"}, {"period": 3, "subject": "문학", "class": "2-11"}, {"period": 5, "subject": "문학", "class": "2-9"}, {"period": 6, "subject": "문학", "class": "2-10"}], "수": [{"period": 2, "subject": "문학", "class": "2-13"}, {"period": 4, "subject": "문학", "class": "2-9"}, {"period": 7, "subject": "동아", "class": "2-11"}], "목": [{"period": 3, "subject": "문학", "class": "2-12"}, {"period": 4, "subject": "문학", "class": "2-11"}, {"period": 7, "subject": "문학", "class": "2-13"}], "금": [{"period": 2, "subject": "문학", "class": "2-9"}, {"period": 4, "subject": "문학", "class": "2-10"}, {"period": 7, "subject": "문학", "class": "2-12"}]}, "total_hours": "17", "homeroom": "2-11", "remarks": null}, {"no": "10", "name": "정원길", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-13"}, {"period": 5, "subject": "심국1", "class": "3-13"}, {"period": 7, "subject": "심국1", "class": "3-12"}], "화": [{"period": 1, "subject": "심국1", "class": "3-9"}, {"period": 3, "subject": "심국1", "class": "3-8"}, {"period": 5, "subject": "심국1", "class": "3-14"}, {"period": 6, "subject": "논술", "class": "3-13"}], "수": [{"period": 2, "subject": "심국1", "class": "3-10"}, {"period": 4, "subject": "심국1", "class": "3-11"}, {"period": 7, "subject": "동아", "class": "3-12"}], "목": [{"period": 3, "subject": "심국1", "class": "3-12"}, {"period": 4, "subject": "심국1", "class": "3-9"}, {"period": 6, "subject": "심국1", "class": "3-8"}], "금": [{"period": 1, "subject": "심국1", "class": "3-13"}, {"period": 3, "subject": "심국1", "class": "3-14"}, {"period": 5, "subject": "심국1", "class": "3-10"}, {"period": 6, "subject": "심국1", "class": "3-11"}]}, "total_hours": "17", "homeroom": "3-13", "remarks": null}, {"no": "11", "name": "강서영", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-9"}, {"period": 4, "subject": "공국2", "class": "1-12"}, {"period": 6, "subject": "논술", "class": "3-7"}, {"period": 7, "subject": "공국2", "class": "1-7"}], "화": [{"period": 2, "subject": "공국2", "class": "1-8"}, {"period": 4, "subject": "공국2", "class": "1-10"}, {"period": 6, "subject": "공국2", "class": "1-11"}], "수": [{"period": 3, "subject": "공국2", "class": "1-7"}, {"period": 4, "subject": "공국2", "class": "1-9"}, {"period": 7, "subject": "동아", "class": "1-9"}], "목": [{"period": 2, "subject": "공국2", "class": "1-10"}, {"period": 5, "subject": "공국2", "class": "1-13"}, {"period": 6, "subject": "공국2", "class": "1-9"}], "금": [{"period": 1, "subject": "공국2", "class": "1-13"}, {"period": 2, "subject": "공국2", "class": "1-11"}, {"period": 4, "subject": "공국2", "class": "1-12"}, {"period": 7, "subject": "공국2", "class": "1-8"}]}, "total_hours": "17", "homeroom": "1-9", "remarks": null}, {"no": "12", "name": "박한솔", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-6"}, {"period": 3, "subject": "심국2", "class": "3-3"}, {"period": 5, "subject": "심국2", "class": "3-7"}, {"period": 7, "subject": "심국2", "class": "3-1"}], "화": [{"period": 2, "subject": "심국2", "class": "3-6"}, {"period": 4, "subject": "심국2", "class": "3-5"}, {"period": 6, "subject": "심국2", "class": "3-2"}, {"period": 7, "subject": "심국2", "class": "3-4"}], "수": [{"period": 1, "subject": "심국2", "class": "3-2"}, {"period": 4, "subject": "심국2", "class": "3-7"}, {"period": 7, "subject": "동아", "class": "3-6"}], "목": [{"period": 3, "subject": "심국2", "class": "3-1"}, {"period": 5, "subject": "심국2", "class": "3-5"}], "금": [{"period": 1, "subject": "심국2", "class": "3-6"}, {"period": 3, "subject": "심국2", "class": "3-4"}, {"period": 5, "subject": "논술", "class": "3-6"}, {"period": 6, "subject": "심국2", "class": "3-3"}]}, "total_hours": "17", "homeroom": "3-6", "remarks": null}, {"no": "13", "name": "정승호", "schedule": {"월": [{"period": 2, "subject": "대수", "class": "2-9"}, {"period": 3, "subject": "대수", "class": "2-8"}, {"period": 6, "subject": "대수", "class": "2-7"}], "화": [{"period": 2, "subject": "대수", "class": "2-9"}, {"period": 3, "subject": "대수", "class": "2-7"}, {"period": 5, "subject": "대수", "class": "2-8"}], "수": [{"period": 2, "subject": "철학", "class": "3-14"}, {"period": 3, "subject": "대수", "class": "2-8"}, {"period": 5, "subject": "진수", "class": "3-1"}], "목": [{"period": 5, "subject": "대수", "class": "2-9"}, {"period": 6, "subject": "대수", "class": "2-7"}], "금": [{"period": 2, "subject": "철학", "class": "3-14"}, {"period": 3, "subject": "대수", "class": "2-7"}, {"period": 5, "subject": "대수", "class": "2-9"}, {"period": 6, "subject": "대수", "class": "2-8"}]}, "total_hours": "15", "homeroom": null, "remarks": null}, {"no": "14", "name": "김종욱", "schedule": {"월": [{"period": 2, "subject": "기하1", "class": "3-13"}, {"period": 3, "subject": "기하1", "class": "3-14"}, {"period": 5, "subject": "미적1", "class": "2-10"}, {"period": 6, "subject": "미적2", "class": "2-11"}], "화": [{"period": 1, "subject": "미적1", "class": "2-10"}, {"period": 2, "subject": "기하1", "class": "3-13"}, {"period": 4, "subject": "기하1", "class": "3-14"}, {"period": 7, "subject": "미적1", "class": "2-11"}], "수": [{"period": 3, "subject": "미적1", "class": "2-11"}, {"period": 4, "subject": "기하1", "class": "3-13"}], "목": [{"period": 3, "subject": "기하2", "class": "3-13"}, {"period": 5, "subject": "기하1", "class": "3-14"}, {"period": 7, "subject": "미적2", "class": "2-10"}], "금": [{"period": 2, "subject": "미적1", "class": "2-11"}, {"period": 3, "subject": "미적1", "class": "2-10"}, {"period": 5, "subject": "기하2", "class": "3-14"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "15", "name": "노진석", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-1"}, {"period": 3, "subject": "공수", "class": "1-1"}, {"period": 4, "subject": "기하2", "class": "3-9"}, {"period": 6, "subject": "기하2", "class": "3-4"}], "화": [{"period": 1, "subject": "공수", "class": "1-1"}, {"period": 2, "subject": "공수", "class": "1-2"}, {"period": 5, "subject": "공수", "class": "1-9"}], "수": [{"period": 2, "subject": "공수", "class": "1-1"}, {"period": 3, "subject": "공수", "class": "1-2"}, {"period": 5, "subject": "공수", "class": "1-9"}], "목": [{"period": 2, "subject": "공수", "class": "1-9"}, {"period": 5, "subject": "공수", "class": "1-2"}, {"period": 6, "subject": "기하2", "class": "3-5"}], "금": [{"period": 3, "subject": "공수", "class": "1-9"}, {"period": 4, "subject": "공수", "class": "1-1"}, {"period": 7, "subject": "공수", "class": "1-2"}]}, "total_hours": "16", "homeroom": "1-1", "remarks": null}, {"no": "16", "name": "주원순", "schedule": {"월": [{"period": 3, "subject": "과토", "class": "3-6"}, {"period": 4, "subject": "과토", "class": "3-7"}], "화": [{"period": 3, "subject": "철학", "class": "3-2"}, {"period": 4, "subject": "철학", "class": "3-3"}], "수": [{"period": 1, "subject": "과토", "class": "3-6"}, {"period": 2, "subject": "철학", "class": "3-1"}], "목": [{"period": 4, "subject": "철학", "class": "3-2"}], "금": [{"period": 1, "subject": "과토", "class": "3-7"}, {"period": 2, "subject": "철학", "class": "3-1"}, {"period": 4, "subject": "철학", "class": "3-3"}]}, "total_hours": "10", "homeroom": null, "remarks": null}, {"no": "17", "name": "이재문", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-10"}, {"period": 3, "subject": "기하1", "class": "3-11"}, {"period": 5, "subject": "기하1", "class": "3-12"}, {"period": 6, "subject": "기하1", "class": "3-9"}], "화": [{"period": 1, "subject": "기하1", "class": "3-12"}, {"period": 2, "subject": "기하1", "class": "3-10"}, {"period": 4, "subject": "기하1", "class": "3-11"}, {"period": 7, "subject": "기하2", "class": "3-10"}], "수": [{"period": 3, "subject": "기하1", "class": "3-10"}, {"period": 5, "subject": "진수", "class": "3-10"}, {"period": 7, "subject": "동아", "class": "3-10"}], "목": [{"period": 3, "subject": "기하1", "class": "3-9"}, {"period": 5, "subject": "기하1", "class": "3-11"}], "금": [{"period": 1, "subject": "기하1", "class": "3-10"}, {"period": 3, "subject": "기하1", "class": "3-9"}, {"period": 5, "subject": "기하1", "class": "3-12"}, {"period": 7, "subject": "진금", "class": "3-10"}]}, "total_hours": "17", "homeroom": "3-10", "remarks": null}, {"no": "18", "name": "이호정", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-2"}, {"period": 2, "subject": "대수", "class": "2-1"}, {"period": 4, "subject": "대수", "class": "2-3"}, {"period": 5, "subject": "대수", "class": "2-4"}], "화": [{"period": 1, "subject": "대수", "class": "2-4"}, {"period": 5, "subject": "대수", "class": "2-3"}, {"period": 6, "subject": "대수", "class": "2-2"}], "수": [{"period": 1, "subject": "대수", "class": "2-1"}, {"period": 3, "subject": "대수", "class": "2-2"}, {"period": 4, "subject": "대수", "class": "2-3"}], "목": [{"period": 3, "subject": "대수", "class": "2-4"}, {"period": 4, "subject": "대수", "class": "2-1"}, {"period": 6, "subject": "대수", "class": "2-2"}], "금": [{"period": 1, "subject": "대수", "class": "2-3"}, {"period": 4, "subject": "대수", "class": "2-4"}, {"period": 6, "subject": "대수", "class": "2-2"}, {"period": 7, "subject": "대수", "class": "2-1"}]}, "total_hours": "17", "homeroom": "2-2", "remarks": null}, {"no": "19", "name": "한지훈", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-1"}, {"period": 2, "subject": "심수", "class": "3-3"}, {"period": 5, "subject": "심수", "class": "3-1"}, {"period": 7, "subject": "기하1", "class": "3-4"}], "화": [{"period": 4, "subject": "심수", "class": "3-1"}, {"period": 6, "subject": "심수", "class": "3-3"}, {"period": 7, "subject": "심수", "class": "3-2"}], "수": [{"period": 1, "subject": "심수", "class": "3-3"}, {"period": 3, "subject": "기하1", "class": "3-4"}, {"period": 4, "subject": "심수", "class": "3-2"}, {"period": 7, "subject": "동아", "class": "3-1"}], "목": [{"period": 5, "subject": "심수", "class": "3-1"}, {"period": 6, "subject": "심수", "class": "3-2"}], "금": [{"period": 1, "subject": "기하1", "class": "3-4"}, {"period": 2, "subject": "심수", "class": "3-2"}, {"period": 4, "subject": "심수", "class": "3-1"}, {"period": 5, "subject": "심수", "class": "3-3"}]}, "total_hours": "17", "homeroom": "3-1", "remarks": null}, {"no": "20", "name": "전병화", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-12"}, {"period": 3, "subject": "공수", "class": "1-12"}, {"period": 5, "subject": "공수", "class": "1-11"}, {"period": 7, "subject": "공수", "class": "1-10"}], "화": [{"period": 1, "subject": "공수", "class": "1-13"}, {"period": 3, "subject": "공수", "class": "1-10"}, {"period": 5, "subject": "공수", "class": "1-11"}, {"period": 6, "subject": "공수", "class": "1-12"}], "수": [{"period": 1, "subject": "공수", "class": "1-13"}, {"period": 4, "subject": "공수", "class": "1-11"}, {"period": 7, "subject": "동아", "class": "1-12"}], "목": [{"period": 2, "subject": "공수", "class": "1-13"}, {"period": 3, "subject": "공수", "class": "1-10"}, {"period": 5, "subject": "공수", "class": "1-12"}], "금": [{"period": 2, "subject": "공수", "class": "1-12"}, {"period": 3, "subject": "공수", "class": "1-11"}, {"period": 5, "subject": "공수", "class": "1-13"}, {"period": 6, "subject": "공수", "class": "1-10"}]}, "total_hours": "18", "homeroom": "1-12", "remarks": null}, {"no": "21", "name": "김영란", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-3"}, {"period": 2, "subject": "공수", "class": "1-4"}, {"period": 5, "subject": "공수", "class": "1-6"}, {"period": 7, "subject": "공수", "class": "1-5"}], "화": [{"period": 3, "subject": "공수", "class": "1-6"}, {"period": 4, "subject": "공수", "class": "1-5"}, {"period": 6, "subject": "공수", "class": "1-3"}], "수": [{"period": 1, "subject": "공수", "class": "1-3"}, {"period": 2, "subject": "공수", "class": "1-6"}, {"period": 4, "subject": "공수", "class": "1-4"}, {"period": 7, "subject": "동아", "class": "1-3"}], "목": [{"period": 3, "subject": "공수", "class": "1-5"}, {"period": 5, "subject": "공수", "class": "1-4"}, {"period": 7, "subject": "공수", "class": "1-3"}], "금": [{"period": 2, "subject": "공수", "class": "1-3"}, {"period": 4, "subject": "공수", "class": "1-6"}, {"period": 6, "subject": "공수", "class": "1-5"}, {"period": 7, "subject": "공수", "class": "1-4"}]}, "total_hours": "18", "homeroom": "1-3", "remarks": null}, {"no": "22", "name": "이상용", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-13"}, {"period": 4, "subject": "미적1", "class": "2-13"}, {"period": 6, "subject": "미적1", "class": "2-8"}, {"period": 7, "subject": "미적1", "class": "2-9"}], "화": [{"period": 2, "subject": "미적1", "class": "2-12"}, {"period": 4, "subject": "미적2", "class": "2-13"}, {"period": 6, "subject": "미적1", "class": "2-9"}], "수": [{"period": 1, "subject": "미적1", "class": "2-13"}, {"period": 3, "subject": "미적1", "class": "2-12"}, {"period": 4, "subject": "미적1", "class": "2-8"}], "목": [{"period": 3, "subject": "미적1", "class": "2-9"}, {"period": 5, "subject": "미적2", "class": "2-8"}, {"period": 7, "subject": "미적2", "class": "2-12"}], "금": [{"period": 1, "subject": "미적2", "class": "2-9"}, {"period": 2, "subject": "미적1", "class": "2-12"}, {"period": 4, "subject": "미적1", "class": "2-8"}, {"period": 6, "subject": "미적1", "class": "2-13"}]}, "total_hours": "17", "homeroom": "2-13", "remarks": null}, {"no": "23", "name": "권재현", "schedule": {"월": [{"period": 2, "subject": "미적1", "class": "2-7"}, {"period": 5, "subject": "미적2", "class": "2-5"}, {"period": 6, "subject": "미적1", "class": "2-6"}], "화": [{"period": 1, "subject": "미적2", "class": "2-6"}, {"period": 3, "subject": "기하2", "class": "3-11"}, {"period": 4, "subject": "미적1", "class": "2-5"}, {"period": 6, "subject": "미적1", "class": "2-7"}], "수": [{"period": 1, "subject": "미적1", "class": "2-5"}, {"period": 2, "subject": "교육", "class": "3-13"}, {"period": 4, "subject": "미적2", "class": "2-4"}, {"period": 5, "subject": "진로", "class": "2-2"}], "목": [{"period": 4, "subject": "미적1", "class": "2-6"}, {"period": 6, "subject": "기하2", "class": "3-12"}, {"period": 7, "subject": "미적2", "class": "2-7"}], "금": [{"period": 1, "subject": "미적1", "class": "2-7"}, {"period": 2, "subject": "교육", "class": "3-13"}, {"period": 4, "subject": "미적1", "class": "2-6"}, {"period": 6, "subject": "미적1", "class": "2-5"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "24", "name": "윤동현", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-8"}, {"period": 2, "subject": "기하1", "class": "3-8"}, {"period": 5, "subject": "기하1", "class": "3-5"}, {"period": 7, "subject": "기하2", "class": "3-6"}], "화": [{"period": 1, "subject": "기하1", "class": "3-5"}, {"period": 3, "subject": "기하1", "class": "3-6"}, {"period": 4, "subject": "기하1", "class": "3-7"}, {"period": 6, "subject": "기하1", "class": "3-8"}], "수": [{"period": 2, "subject": "기하2", "class": "3-8"}, {"period": 3, "subject": "기하1", "class": "3-5"}, {"period": 5, "subject": "진수", "class": "3-8"}, {"period": 7, "subject": "동아", "class": "3-8"}], "목": [{"period": 3, "subject": "기하1", "class": "3-6"}, {"period": 5, "subject": "기하1", "class": "3-7"}], "금": [{"period": 2, "subject": "기하1", "class": "3-7"}, {"period": 3, "subject": "기하1", "class": "3-8"}, {"period": 5, "subject": "기하2", "class": "3-7"}, {"period": 6, "subject": "기하1", "class": "3-6"}]}, "total_hours": "18", "homeroom": "3-8", "remarks": null}, {"no": "25", "name": "김정훈", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-7"}, {"period": 4, "subject": "공수", "class": "1-7"}, {"period": 6, "subject": "대수", "class": "2-5"}], "화": [{"period": 1, "subject": "대수", "class": "2-5"}, {"period": 3, "subject": "공수", "class": "1-8"}, {"period": 4, "subject": "대수", "class": "2-6"}, {"period": 7, "subject": "공수", "class": "1-7"}], "수": [{"period": 1, "subject": "대수", "class": "2-6"}, {"period": 2, "subject": "공수", "class": "1-7"}, {"period": 4, "subject": "공수", "class": "1-8"}], "목": [{"period": 3, "subject": "대수", "class": "2-6"}, {"period": 4, "subject": "대수", "class": "2-5"}, {"period": 7, "subject": "공수", "class": "1-8"}], "금": [{"period": 2, "subject": "공수", "class": "1-7"}, {"period": 3, "subject": "대수", "class": "2-5"}, {"period": 5, "subject": "공수", "class": "1-8"}, {"period": 6, "subject": "대수", "class": "2-6"}]}, "total_hours": "17", "homeroom": "1-7", "remarks": null}, {"no": "26", "name": "김경모", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-4"}, {"period": 2, "subject": "미적1", "class": "2-3"}, {"period": 4, "subject": "미적1", "class": "2-1"}, {"period": 6, "subject": "미적1", "class": "2-2"}], "화": [{"period": 1, "subject": "미적1", "class": "2-3"}, {"period": 2, "subject": "미적1", "class": "2-1"}, {"period": 4, "subject": "미적1", "class": "2-4"}, {"period": 5, "subject": "미적2", "class": "2-2"}], "수": [{"period": 1, "subject": "미적1", "class": "2-2"}, {"period": 4, "subject": "미적2", "class": "2-1"}, {"period": 7, "subject": "동아", "class": "2-4"}], "목": [{"period": 3, "subject": "미적2", "class": "2-3"}, {"period": 4, "subject": "미적1", "class": "2-4"}], "금": [{"period": 1, "subject": "미적1", "class": "2-2"}, {"period": 3, "subject": "미적1", "class": "2-4"}, {"period": 6, "subject": "미적1", "class": "2-1"}, {"period": 7, "subject": "미적1", "class": "2-3"}]}, "total_hours": "17", "homeroom": "2-4", "remarks": null}, {"no": "27", "name": "정현석", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-10"}, {"period": 3, "subject": "대수", "class": "2-11"}, {"period": 4, "subject": "대수", "class": "2-12"}, {"period": 6, "subject": "대수", "class": "2-10"}], "화": [{"period": 3, "subject": "대수", "class": "2-10"}, {"period": 5, "subject": "대수", "class": "2-12"}, {"period": 6, "subject": "대수", "class": "2-13"}], "수": [{"period": 1, "subject": "대수", "class": "2-11"}, {"period": 2, "subject": "대수", "class": "2-10"}, {"period": 4, "subject": "대수", "class": "2-13"}, {"period": 7, "subject": "동아", "class": "2-10"}], "목": [{"period": 4, "subject": "대수", "class": "2-13"}, {"period": 5, "subject": "대수", "class": "2-12"}, {"period": 7, "subject": "대수", "class": "2-11"}], "금": [{"period": 1, "subject": "대수", "class": "2-12"}, {"period": 2, "subject": "대수", "class": "2-10"}, {"period": 5, "subject": "대수", "class": "2-11"}, {"period": 7, "subject": "대수", "class": "2-13"}]}, "total_hours": "18", "homeroom": "2-10", "remarks": null}, {"no": "28", "name": "정훈철", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-9"}, {"period": 4, "subject": "영1", "class": "2-11"}, {"period": 7, "subject": "영2", "class": "2-10"}], "화": [{"period": 2, "subject": "영1", "class": "2-10"}, {"period": 3, "subject": "영1", "class": "2-9"}, {"period": 5, "subject": "영2", "class": "2-11"}], "수": [{"period": 1, "subject": "영1", "class": "2-9"}, {"period": 3, "subject": "영1", "class": "2-10"}, {"period": 5, "subject": "진로", "class": "2-9"}], "목": [{"period": 3, "subject": "영2", "class": "2-7"}, {"period": 4, "subject": "영1", "class": "2-9"}, {"period": 6, "subject": "영1", "class": "2-11"}], "금": [{"period": 4, "subject": "영1", "class": "2-11"}, {"period": 6, "subject": "영1", "class": "2-10"}, {"period": 7, "subject": "영2", "class": "2-9"}]}, "total_hours": "15", "homeroom": "2-9", "remarks": null}, {"no": "29", "name": "박순옥", "schedule": {"월": [{"period": 3, "subject": "심영1", "class": "3-9"}, {"period": 5, "subject": "심영1", "class": "3-10"}, {"period": 7, "subject": "심영2", "class": "3-5"}], "화": [{"period": 1, "subject": "심영2", "class": "3-10"}, {"period": 2, "subject": "심영2", "class": "3-14"}, {"period": 4, "subject": "심영1", "class": "3-9"}], "수": [{"period": 2, "subject": "심영2", "class": "3-9"}, {"period": 3, "subject": "심영2", "class": "3-13"}, {"period": 5, "subject": "진수", "class": "3-2"}], "목": [{"period": 3, "subject": "심영2", "class": "3-3"}, {"period": 4, "subject": "심영1", "class": "3-10"}, {"period": 7, "subject": "심영2", "class": "3-8"}], "금": [{"period": 1, "subject": "심영1", "class": "3-9"}, {"period": 4, "subject": "심영1", "class": "3-10"}, {"period": 6, "subject": "심영2", "class": "3-4"}, {"period": 7, "subject": "진금", "class": "3-2"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "30", "name": "김원호", "schedule": {"월": [{"period": 2, "subject": "영1", "class": "2-8"}, {"period": 4, "subject": "영2", "class": "2-5"}, {"period": 6, "subject": "영1", "class": "2-12"}, {"period": 7, "subject": "영1", "class": "2-13"}], "화": [{"period": 3, "subject": "영2", "class": "2-13"}, {"period": 4, "subject": "영1", "class": "2-12"}, {"period": 7, "subject": "영1", "class": "2-8"}], "수": [{"period": 2, "subject": "영1", "class": "2-12"}, {"period": 4, "subject": "영2", "class": "2-6"}, {"period": 5, "subject": "진로", "class": "2-1"}], "목": [{"period": 3, "subject": "영2", "class": "2-8"}, {"period": 6, "subject": "영1", "class": "2-13"}], "금": [{"period": 2, "subject": "영1", "class": "2-8"}, {"period": 4, "subject": "영1", "class": "2-13"}, {"period": 6, "subject": "영2", "class": "2-12"}, {"period": 7, "subject": "진금", "class": "3-5"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "31", "name": "이현호", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-11"}, {"period": 2, "subject": "심영1", "class": "3-14"}, {"period": 4, "subject": "심영1", "class": "3-13"}, {"period": 7, "subject": "심영2", "class": "3-11"}], "화": [{"period": 1, "subject": "심영1", "class": "3-13"}, {"period": 2, "subject": "심영1", "class": "3-1"}, {"period": 5, "subject": "심영1", "class": "3-11"}], "수": [{"period": 1, "subject": "심영1", "class": "3-11"}, {"period": 4, "subject": "심영1", "class": "3-14"}, {"period": 5, "subject": "진수", "class": "3-11"}, {"period": 7, "subject": "동아", "class": "3-11"}], "목": [{"period": 4, "subject": "심영1", "class": "3-1"}, {"period": 6, "subject": "심영1", "class": "3-13"}, {"period": 7, "subject": "심영1", "class": "3-14"}], "금": [{"period": 2, "subject": "심영1", "class": "3-11"}, {"period": 4, "subject": "심영2", "class": "3-12"}, {"period": 6, "subject": "심영1", "class": "3-1"}]}, "total_hours": "17", "homeroom": "3-11", "remarks": null}, {"no": "32", "name": "김진섭", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-6"}, {"period": 2, "subject": "공영1", "class": "1-6"}, {"period": 4, "subject": "공영1", "class": "1-1"}, {"period": 6, "subject": "공영2", "class": "1-10"}], "화": [{"period": 1, "subject": "공영1", "class": "1-7"}, {"period": 3, "subject": "공영1", "class": "1-1"}, {"period": 5, "subject": "공영1", "class": "1-2"}], "수": [{"period": 3, "subject": "공영2", "class": "1-8"}, {"period": 4, "subject": "공영1", "class": "1-6"}, {"period": 7, "subject": "동아", "class": "1-6"}], "목": [{"period": 2, "subject": "공영1", "class": "1-2"}, {"period": 4, "subject": "공영1", "class": "1-7"}, {"period": 6, "subject": "공영1", "class": "1-6"}, {"period": 7, "subject": "공영1", "class": "1-1"}], "금": [{"period": 1, "subject": "공영2", "class": "1-6"}, {"period": 4, "subject": "공영1", "class": "1-2"}, {"period": 7, "subject": "공영1", "class": "1-7"}]}, "total_hours": "17", "homeroom": "1-6", "remarks": null}, {"no": "33", "name": "박준형", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-5"}, {"period": 4, "subject": "심영1", "class": "3-8"}, {"period": 6, "subject": "심영1", "class": "3-6"}, {"period": 7, "subject": "심영2", "class": "3-7"}], "화": [{"period": 1, "subject": "심영1", "class": "3-6"}, {"period": 2, "subject": "심영1", "class": "3-5"}, {"period": 5, "subject": "심영1", "class": "3-7"}, {"period": 7, "subject": "심영1", "class": "3-8"}], "수": [{"period": 1, "subject": "심영1", "class": "3-5"}, {"period": 3, "subject": "심영1", "class": "3-7"}, {"period": 5, "subject": "진수", "class": "3-5"}, {"period": 7, "subject": "동아", "class": "3-5"}], "목": [{"period": 4, "subject": "심영1", "class": "3-7"}, {"period": 6, "subject": "심영2", "class": "3-6"}], "금": [{"period": 2, "subject": "심영1", "class": "3-8"}, {"period": 4, "subject": "심영1", "class": "3-6"}, {"period": 5, "subject": "심영1", "class": "3-5"}]}, "total_hours": "17", "homeroom": "3-5", "remarks": null}, {"no": "34", "name": "구본광", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-13"}, {"period": 3, "subject": "공영1", "class": "1-4"}, {"period": 4, "subject": "공영1", "class": "1-13"}, {"period": 7, "subject": "공영1", "class": "1-12"}], "화": [{"period": 2, "subject": "공영1", "class": "1-4"}, {"period": 3, "subject": "공영1", "class": "1-3"}, {"period": 5, "subject": "공영1", "class": "1-12"}, {"period": 7, "subject": "공영2", "class": "1-9"}], "수": [{"period": 3, "subject": "공영1", "class": "1-3"}, {"period": 4, "subject": "공영2", "class": "1-5"}, {"period": 7, "subject": "동아", "class": "1-13"}], "목": [{"period": 4, "subject": "공영1", "class": "1-4"}, {"period": 6, "subject": "공영1", "class": "1-13"}], "금": [{"period": 1, "subject": "공영1", "class": "1-12"}, {"period": 3, "subject": "공영1", "class": "1-13"}, {"period": 5, "subject": "공영1", "class": "1-3"}, {"period": 6, "subject": "공영2", "class": "1-11"}]}, "total_hours": "17", "homeroom": "1-13", "remarks": null}, {"no": "35", "name": "권춘혁", "schedule": {"월": [{"period": 2, "subject": "영1", "class": "2-4"}, {"period": 4, "subject": "영1", "class": "2-2"}, {"period": 5, "subject": "영1", "class": "2-3"}], "화": [{"period": 1, "subject": "영1", "class": "2-2"}, {"period": 2, "subject": "영1", "class": "2-3"}, {"period": 5, "subject": "영2", "class": "2-4"}, {"period": 6, "subject": "영1", "class": "2-1"}], "수": [{"period": 1, "subject": "영1", "class": "2-4"}, {"period": 3, "subject": "영2", "class": "2-1"}, {"period": 5, "subject": "진수", "class": "3-7"}, {"period": 7, "subject": "동아", "class": "1-11"}], "목": [{"period": 3, "subject": "영1", "class": "2-1"}, {"period": 4, "subject": "영2", "class": "2-2"}, {"period": 6, "subject": "영2", "class": "2-3"}], "금": [{"period": 1, "subject": "영1", "class": "2-1"}, {"period": 3, "subject": "영1", "class": "2-3"}, {"period": 4, "subject": "영1", "class": "2-2"}, {"period": 7, "subject": "영1", "class": "2-4"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "36", "name": "황영채", "schedule": {"월": [{"period": 2, "subject": "공영2", "class": "1-12"}, {"period": 3, "subject": "영1", "class": "2-7"}, {"period": 5, "subject": "영1", "class": "2-6"}, {"period": 6, "subject": "공영2", "class": "1-2"}], "화": [{"period": 2, "subject": "영1", "class": "2-6"}, {"period": 5, "subject": "영1", "class": "2-5"}, {"period": 7, "subject": "영1", "class": "2-7"}], "수": [{"period": 1, "subject": "공영2", "class": "1-7"}, {"period": 2, "subject": "공영2", "class": "1-13"}, {"period": 5, "subject": "진로", "class": "2-8"}, {"period": 7, "subject": "동아", "class": "2-2"}], "목": [{"period": 3, "subject": "영1", "class": "2-5"}, {"period": 5, "subject": "공영2", "class": "1-3"}], "금": [{"period": 1, "subject": "영1", "class": "2-5"}, {"period": 3, "subject": "영1", "class": "2-6"}, {"period": 4, "subject": "영1", "class": "2-7"}, {"period": 6, "subject": "공영2", "class": "1-4"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "37", "name": "권혜지", "schedule": {"월": [{"period": 3, "subject": "공영1", "class": "1-11"}, {"period": 4, "subject": "공영1", "class": "1-8"}, {"period": 7, "subject": "공영1", "class": "1-9"}], "화": [{"period": 1, "subject": "공영1", "class": "1-8"}, {"period": 2, "subject": "공영1", "class": "1-5"}, {"period": 4, "subject": "공영1", "class": "1-11"}, {"period": 7, "subject": "공영1", "class": "1-10"}], "수": [{"period": 1, "subject": "공영1", "class": "1-9"}, {"period": 3, "subject": "공영1", "class": "1-10"}, {"period": 5, "subject": "진수", "class": "3-6"}, {"period": 7, "subject": "동아", "class": "1-1"}], "목": [{"period": 3, "subject": "공영1", "class": "1-8"}, {"period": 5, "subject": "공영1", "class": "1-5"}, {"period": 7, "subject": "공영1", "class": "1-11"}], "금": [{"period": 1, "subject": "공영1", "class": "1-10"}, {"period": 2, "subject": "공영1", "class": "1-5"}, {"period": 4, "subject": "공영1", "class": "1-9"}, {"period": 6, "subject": "공영2", "class": "1-1"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "38", "name": "도나경", "schedule": {"월": [{"period": 2, "subject": "심영1", "class": "3-12"}, {"period": 3, "subject": "심영1", "class": "3-2"}, {"period": 5, "subject": "심영1", "class": "3-4"}, {"period": 7, "subject": "심영1", "class": "3-3"}], "화": [{"period": 1, "subject": "심영1", "class": "3-2"}, {"period": 3, "subject": "심영1", "class": "3-3"}, {"period": 5, "subject": "심영1", "class": "3-4"}, {"period": 6, "subject": "심영1", "class": "3-12"}], "수": [{"period": 1, "subject": "심영1", "class": "3-4"}, {"period": 3, "subject": "심영2", "class": "3-1"}, {"period": 5, "subject": "진로", "class": "2-10"}, {"period": 7, "subject": "동아", "class": "3-9"}], "목": [{"period": 4, "subject": "심영1", "class": "3-12"}, {"period": 5, "subject": "심영2", "class": "3-2"}], "금": [{"period": 3, "subject": "심영1", "class": "3-3"}, {"period": 4, "subject": "심영1", "class": "3-2"}, {"period": 7, "subject": "진금", "class": "3-11"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "39", "name": "이경민", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-4"}, {"period": 5, "subject": "통사", "class": "1-13"}, {"period": 7, "subject": "사문C", "class": "2-2"}], "화": [{"period": 3, "subject": "통사", "class": "1-2"}, {"period": 4, "subject": "통사", "class": "1-13"}, {"period": 7, "subject": "통사", "class": "1-3"}], "수": [{"period": 2, "subject": "통사", "class": "1-12"}, {"period": 3, "subject": "통사", "class": "1-4"}, {"period": 5, "subject": "통사", "class": "1-1"}], "목": [{"period": 4, "subject": "통사", "class": "1-3"}, {"period": 6, "subject": "통사", "class": "1-2"}, {"period": 7, "subject": "사문C", "class": "2-2"}], "금": [{"period": 2, "subject": "사문C", "class": "2-2"}, {"period": 3, "subject": "통사", "class": "1-4"}, {"period": 5, "subject": "통사", "class": "1-1"}, {"period": 6, "subject": "통사", "class": "1-12"}]}, "total_hours": "16", "homeroom": "1-4", "remarks": null}, {"no": "40", "name": "최윤호", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-2"}, {"period": 3, "subject": "사문B", "class": "2-2"}, {"period": 5, "subject": "사화", "class": "3-3"}], "화": [{"period": 1, "subject": "사화", "class": "3-3"}, {"period": 3, "subject": "사문A", "class": "2-2"}, {"period": 4, "subject": "사화", "class": "3-2"}, {"period": 7, "subject": "사문B", "class": "2-2"}], "수": [{"period": 1, "subject": "사화", "class": "3-1"}, {"period": 2, "subject": "사문A", "class": "2-2"}, {"period": 4, "subject": "사화", "class": "3-3"}, {"period": 7, "subject": "동아", "class": "3-2"}], "목": [{"period": 3, "subject": "사화", "class": "3-2"}, {"period": 5, "subject": "사문B", "class": "2-2"}, {"period": 6, "subject": "사화", "class": "3-1"}], "금": [{"period": 1, "subject": "사화", "class": "3-1"}, {"period": 5, "subject": "사문A", "class": "2-2"}, {"period": 6, "subject": "사화", "class": "3-2"}]}, "total_hours": "17", "homeroom": "3-2", "remarks": null}, {"no": "41", "name": "배정엽", "schedule": {"월": [{"period": 2, "subject": "국경", "class": "3-1"}, {"period": 3, "subject": "통사", "class": "1-9"}, {"period": 5, "subject": "통사", "class": "1-5"}, {"period": 6, "subject": "통사", "class": "1-7"}], "화": [{"period": 1, "subject": "통사", "class": "1-10"}, {"period": 2, "subject": "통사", "class": "1-11"}, {"period": 5, "subject": "국경", "class": "3-3"}, {"period": 7, "subject": "통사", "class": "1-6"}], "수": [{"period": 1, "subject": "통사", "class": "1-6"}, {"period": 2, "subject": "통사", "class": "1-10"}, {"period": 5, "subject": "통사", "class": "1-8"}], "목": [{"period": 3, "subject": "통사", "class": "1-9"}, {"period": 4, "subject": "통사", "class": "1-8"}, {"period": 6, "subject": "국경", "class": "3-3"}, {"period": 7, "subject": "국경", "class": "3-1"}], "금": [{"period": 1, "subject": "통사", "class": "1-5"}, {"period": 4, "subject": "통사", "class": "1-7"}, {"period": 7, "subject": "통사", "class": "1-11"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "42", "name": "배경섭", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-3"}, {"period": 3, "subject": "세지B", "class": "2-3"}, {"period": 5, "subject": "논술", "class": "3-2"}, {"period": 6, "subject": "논술", "class": "3-1"}], "화": [{"period": 3, "subject": "세지A", "class": "2-3"}, {"period": 4, "subject": "지리", "class": "1-3"}, {"period": 7, "subject": "세지B", "class": "2-3"}], "수": [{"period": 1, "subject": "지리", "class": "1-1"}, {"period": 2, "subject": "세지A", "class": "2-3"}, {"period": 5, "subject": "진로", "class": "2-3"}, {"period": 7, "subject": "동아", "class": "2-3"}], "목": [{"period": 2, "subject": "지리", "class": "1-4"}, {"period": 5, "subject": "세지B", "class": "2-3"}, {"period": 7, "subject": "지리", "class": "1-2"}], "금": [{"period": 3, "subject": "지리", "class": "1-5"}, {"period": 5, "subject": "세지A", "class": "2-3"}, {"period": 7, "subject": "진금", "class": "3-6"}]}, "total_hours": "17", "homeroom": "2-3", "remarks": null}, {"no": "43", "name": "조민경", "schedule": {"월": [{"period": 2, "subject": "한이", "class": "3-2"}, {"period": 5, "subject": "지리", "class": "1-12"}, {"period": 7, "subject": "인철", "class": "1-2"}], "화": [{"period": 1, "subject": "지리", "class": "1-6"}, {"period": 5, "subject": "지리", "class": "1-13"}, {"period": 7, "subject": "인철", "class": "1-1"}], "수": [{"period": 2, "subject": "지리", "class": "1-11"}, {"period": 3, "subject": "지리", "class": "1-9"}, {"period": 5, "subject": "진수", "class": "3-4"}, {"period": 7, "subject": "동아", "class": "1-4"}], "목": [{"period": 3, "subject": "인철", "class": "1-1"}, {"period": 5, "subject": "지리", "class": "1-7"}, {"period": 7, "subject": "한이", "class": "3-2"}], "금": [{"period": 3, "subject": "인철", "class": "1-2"}, {"period": 4, "subject": "지리", "class": "1-10"}, {"period": 6, "subject": "지리", "class": "1-8"}, {"period": 7, "subject": "진금", "class": "3-4"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "44", "name": "심형엽", "schedule": {"월": [{"period": 3, "subject": "한국", "class": "1-7"}, {"period": 4, "subject": "한국", "class": "1-6"}, {"period": 7, "subject": "세계", "class": "2-3"}], "화": [{"period": 3, "subject": "세계", "class": "2-4"}, {"period": 5, "subject": "한국", "class": "1-5"}, {"period": 6, "subject": "한국", "class": "1-6"}], "수": [{"period": 2, "subject": "세계", "class": "2-4"}, {"period": 3, "subject": "한국", "class": "1-5"}, {"period": 5, "subject": "한국", "class": "1-7"}], "목": [{"period": 3, "subject": "한국", "class": "1-7"}, {"period": 4, "subject": "한국", "class": "1-5"}, {"period": 7, "subject": "세계", "class": "2-3"}], "금": [{"period": 2, "subject": "세계", "class": "2-3"}, {"period": 3, "subject": "한국", "class": "1-6"}, {"period": 5, "subject": "세계", "class": "2-4"}]}, "total_hours": "15", "homeroom": null, "remarks": null}, {"no": "45", "name": "김강석", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-3"}, {"period": 3, "subject": "한국", "class": "1-2"}, {"period": 4, "subject": "동아", "class": "3-1"}, {"period": 7, "subject": "한국", "class": "1-4"}], "화": [{"period": 2, "subject": "한국", "class": "1-3"}, {"period": 3, "subject": "한국", "class": "1-4"}, {"period": 5, "subject": "동아", "class": "3-1"}, {"period": 7, "subject": "한국", "class": "1-2"}], "수": [{"period": 4, "subject": "한국", "class": "1-1"}, {"period": 7, "subject": "동아", "class": "3-3"}], "목": [{"period": 2, "subject": "한국", "class": "1-3"}, {"period": 3, "subject": "한국", "class": "1-2"}, {"period": 5, "subject": "한국", "class": "1-1"}], "금": [{"period": 1, "subject": "한국", "class": "1-1"}, {"period": 3, "subject": "동아", "class": "3-1"}, {"period": 4, "subject": "한국", "class": "1-4"}, {"period": 7, "subject": "한국", "class": "1-3"}]}, "total_hours": "17", "homeroom": "3-3", "remarks": null}, {"no": "46", "name": "권혁준", "schedule": {"월": [{"period": 2, "subject": "한국", "class": "1-10"}, {"period": 3, "subject": "한국", "class": "1-8"}, {"period": 5, "subject": "한국", "class": "1-9"}, {"period": 6, "subject": "한국", "class": "1-13"}], "화": [{"period": 1, "subject": "한국", "class": "1-9"}, {"period": 3, "subject": "한국", "class": "1-12"}, {"period": 5, "subject": "한국", "class": "1-10"}, {"period": 7, "subject": "한국", "class": "1-11"}], "수": [{"period": 1, "subject": "한국", "class": "1-11"}, {"period": 3, "subject": "한국", "class": "1-13"}, {"period": 4, "subject": "한국", "class": "1-12"}], "목": [{"period": 4, "subject": "한국", "class": "1-12"}, {"period": 6, "subject": "한국", "class": "1-8"}, {"period": 7, "subject": "한국", "class": "1-10"}], "금": [{"period": 1, "subject": "한국", "class": "1-11"}, {"period": 2, "subject": "한국", "class": "1-8"}, {"period": 4, "subject": "한국", "class": "1-13"}, {"period": 6, "subject": "한국", "class": "1-9"}]}, "total_hours": "18", "homeroom": "1-10", "remarks": null}, {"no": "47", "name": "김화백", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-14"}, {"period": 3, "subject": "현윤B", "class": "2-1"}, {"period": 4, "subject": "생윤", "class": "3-2"}, {"period": 7, "subject": "현윤C", "class": "2-1"}], "화": [{"period": 2, "subject": "생윤", "class": "3-3"}, {"period": 3, "subject": "현윤A", "class": "2-1"}, {"period": 5, "subject": "생윤", "class": "3-2"}, {"period": 7, "subject": "현윤B", "class": "2-1"}], "수": [{"period": 2, "subject": "현윤A", "class": "2-1"}, {"period": 3, "subject": "생윤", "class": "3-3"}], "목": [{"period": 4, "subject": "생윤", "class": "3-3"}, {"period": 5, "subject": "현윤B", "class": "2-1"}, {"period": 7, "subject": "현윤C", "class": "2-1"}], "금": [{"period": 2, "subject": "현윤C", "class": "2-1"}, {"period": 3, "subject": "생윤", "class": "3-2"}, {"period": 5, "subject": "현윤A", "class": "2-1"}]}, "total_hours": "16", "homeroom": "3-14", "remarks": null}, {"no": "48", "name": "이현재", "schedule": {"월": [{"period": 2, "subject": "윤리", "class": "1-5"}, {"period": 4, "subject": "윤리", "class": "1-3"}, {"period": 6, "subject": "윤리", "class": "1-1"}], "화": [{"period": 3, "subject": "윤리", "class": "1-7"}, {"period": 4, "subject": "윤리", "class": "1-8"}, {"period": 6, "subject": "윤리", "class": "1-13"}], "수": [{"period": 5, "subject": "윤리", "class": "1-12"}, {"period": 7, "subject": "동아", "class": "3-4"}], "목": [{"period": 3, "subject": "윤리", "class": "1-11"}, {"period": 5, "subject": "윤리", "class": "1-6"}, {"period": 7, "subject": "윤리", "class": "1-4"}], "금": [{"period": 2, "subject": "윤리", "class": "1-2"}, {"period": 5, "subject": "윤리", "class": "1-9"}, {"period": 7, "subject": "윤리", "class": "1-10"}]}, "total_hours": "14", "homeroom": null, "remarks": null}, {"no": "49", "name": "정선우", "schedule": {"월": [{"period": 2, "subject": "물2", "class": "3-9"}, {"period": 4, "subject": "물2", "class": "3-10"}, {"period": 6, "subject": "물2", "class": "3-11"}], "화": [{"period": 2, "subject": "물2", "class": "3-12"}, {"period": 5, "subject": "물2", "class": "3-13"}, {"period": 7, "subject": "물2", "class": "3-14"}], "수": [{"period": 5, "subject": "진수", "class": "3-14"}, {"period": 7, "subject": "동아", "class": "3학습2"}], "목": [{"period": 3, "subject": "물2", "class": "3-11"}, {"period": 5, "subject": "물2", "class": "3-10"}, {"period": 7, "subject": "물2", "class": "3-9"}], "금": [{"period": 3, "subject": "물2", "class": "3-13"}, {"period": 4, "subject": "물2", "class": "3-14"}, {"period": 6, "subject": "물2", "class": "3-12"}]}, "total_hours": "14", "homeroom": null, "remarks": null}, {"no": "50", "name": "박경환", "schedule": {"월": [{"period": 2, "subject": "물리", "class": "2-10"}, {"period": 3, "subject": "물리", "class": "2-12"}, {"period": 5, "subject": "물리", "class": "2-13"}, {"period": 7, "subject": "통물", "class": "1-13"}], "화": [{"period": 1, "subject": "물리", "class": "2-11"}, {"period": 2, "subject": "물리", "class": "2-13"}, {"period": 4, "subject": "물리", "class": "2-9"}, {"period": 5, "subject": "물리", "class": "2-10"}], "수": [{"period": 2, "subject": "물리", "class": "2-9"}, {"period": 4, "subject": "물리", "class": "2-11"}, {"period": 7, "subject": "동아", "class": "2-13"}], "목": [{"period": 4, "subject": "물리", "class": "2-12"}, {"period": 6, "subject": "물리", "class": "2-9"}], "금": [{"period": 2, "subject": "물리", "class": "2-13"}, {"period": 3, "subject": "물리", "class": "2-12"}, {"period": 5, "subject": "물리", "class": "2-10"}, {"period": 6, "subject": "물리", "class": "2-11"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "51", "name": "이지훈", "schedule": {"월": [{"period": 2, "subject": "물2", "class": "3-6"}, {"period": 4, "subject": "물2", "class": "3-5"}, {"period": 7, "subject": "물2", "class": "3-8"}], "화": [{"period": 1, "subject": "물리", "class": "2-8"}, {"period": 3, "subject": "물리", "class": "2-6"}, {"period": 5, "subject": "물리", "class": "2-7"}, {"period": 6, "subject": "물2", "class": "3-7"}], "수": [{"period": 1, "subject": "물리", "class": "2-7"}, {"period": 2, "subject": "물리", "class": "2-6"}, {"period": 4, "subject": "물2", "class": "3-6"}, {"period": 7, "subject": "동아", "class": "3-7"}], "목": [{"period": 4, "subject": "물2", "class": "3-8"}, {"period": 6, "subject": "물리", "class": "2-8"}, {"period": 7, "subject": "물2", "class": "3-5"}], "금": [{"period": 1, "subject": "물리", "class": "2-8"}, {"period": 3, "subject": "물2", "class": "3-7"}, {"period": 5, "subject": "물리", "class": "2-6"}, {"period": 6, "subject": "물리", "class": "2-7"}]}, "total_hours": "18", "homeroom": "3-7", "remarks": null}, {"no": "52", "name": "황준식", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-7"}, {"period": 2, "subject": "통물", "class": "1-1"}, {"period": 4, "subject": "통물", "class": "1-2"}, {"period": 6, "subject": "통물", "class": "1-3"}], "화": [{"period": 1, "subject": "과토", "class": "3-8"}, {"period": 5, "subject": "통물", "class": "1-8"}, {"period": 6, "subject": "통물", "class": "1-4"}], "수": [{"period": 1, "subject": "통물", "class": "1-12"}, {"period": 2, "subject": "과토", "class": "3-5"}, {"period": 4, "subject": "통물", "class": "1-7"}, {"period": 7, "subject": "동아", "class": "1-5"}], "목": [{"period": 4, "subject": "통물", "class": "1-10"}, {"period": 6, "subject": "통물", "class": "1-11"}, {"period": 7, "subject": "통물", "class": "1-5"}], "금": [{"period": 1, "subject": "통물", "class": "1-9"}, {"period": 2, "subject": "과토", "class": "3-5"}, {"period": 4, "subject": "과토", "class": "3-8"}, {"period": 7, "subject": "통물", "class": "1-6"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "53", "name": "김윤섭", "schedule": {"월": [{"period": 3, "subject": "통화", "class": "1-3"}, {"period": 4, "subject": "통화", "class": "1-4"}, {"period": 7, "subject": "통화", "class": "1-8"}], "화": [{"period": 2, "subject": "통화", "class": "1-6"}, {"period": 3, "subject": "통화", "class": "1-9"}, {"period": 5, "subject": "통화", "class": "1-1"}], "수": [{"period": 2, "subject": "통화", "class": "1-2"}, {"period": 3, "subject": "융과1", "class": "3-11"}, {"period": 5, "subject": "통화", "class": "1-13"}], "목": [{"period": 2, "subject": "통화", "class": "1-5"}, {"period": 5, "subject": "통화", "class": "1-10"}, {"period": 7, "subject": "통화", "class": "1-7"}], "금": [{"period": 4, "subject": "통화", "class": "1-11"}, {"period": 6, "subject": "융과1", "class": "3-10"}, {"period": 7, "subject": "통화", "class": "1-12"}]}, "total_hours": "15", "homeroom": null, "remarks": null}, {"no": "54", "name": "류승현", "schedule": {"월": [{"period": 2, "subject": "화2", "class": "3-5"}, {"period": 3, "subject": "화학", "class": "2-4"}, {"period": 5, "subject": "화학", "class": "2-7"}, {"period": 7, "subject": "화학", "class": "2-5"}], "화": [{"period": 2, "subject": "융과1", "class": "3-7"}, {"period": 4, "subject": "화학", "class": "2-7"}, {"period": 6, "subject": "화2", "class": "3-6"}, {"period": 7, "subject": "화학", "class": "2-4"}], "수": [{"period": 2, "subject": "융과1", "class": "3-6"}, {"period": 4, "subject": "화2", "class": "3-5"}], "목": [{"period": 4, "subject": "화2", "class": "3-6"}, {"period": 5, "subject": "화학", "class": "2-4"}, {"period": 7, "subject": "화학", "class": "2-5"}], "금": [{"period": 2, "subject": "화학", "class": "2-5"}, {"period": 5, "subject": "화학", "class": "2-7"}, {"period": 6, "subject": "융과1", "class": "3-5"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "55", "name": "노병욱", "schedule": {"월": [{"period": 3, "subject": "화학", "class": "2-9"}, {"period": 4, "subject": "화학", "class": "2-8"}, {"period": 6, "subject": "화학", "class": "2-13"}, {"period": 7, "subject": "화학", "class": "2-12"}], "화": [{"period": 1, "subject": "화학", "class": "2-12"}, {"period": 2, "subject": "화학", "class": "2-11"}, {"period": 4, "subject": "화학", "class": "2-8"}, {"period": 7, "subject": "화학", "class": "2-9"}], "수": [{"period": 1, "subject": "화학", "class": "2-10"}, {"period": 3, "subject": "화학", "class": "2-13"}, {"period": 4, "subject": "화학", "class": "2-12"}], "목": [{"period": 3, "subject": "화학", "class": "2-11"}, {"period": 5, "subject": "화학", "class": "2-13"}, {"period": 6, "subject": "화학", "class": "2-10"}], "금": [{"period": 1, "subject": "화학", "class": "2-10"}, {"period": 3, "subject": "화학", "class": "2-9"}, {"period": 5, "subject": "화학", "class": "2-8"}, {"period": 7, "subject": "화학", "class": "2-11"}]}, "total_hours": "18", "homeroom": "2-12", "remarks": null}, {"no": "56", "name": "장조은", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "3-12"}, {"period": 2, "subject": "화2", "class": "3-7"}, {"period": 4, "subject": "화2", "class": "3-12"}, {"period": 6, "subject": "화2", "class": "3-14"}], "화": [{"period": 2, "subject": "화2", "class": "3-8"}, {"period": 3, "subject": "화2", "class": "3-13"}, {"period": 5, "subject": "화2", "class": "3-10"}, {"period": 7, "subject": "화2", "class": "3-9"}], "수": [{"period": 1, "subject": "화2", "class": "3-12"}, {"period": 2, "subject": "화2", "class": "3-11"}, {"period": 7, "subject": "동아", "class": "3-13"}], "목": [{"period": 3, "subject": "화2", "class": "3-14"}, {"period": 5, "subject": "화2", "class": "3-8"}, {"period": 7, "subject": "화2", "class": "3-7"}], "금": [{"period": 1, "subject": "화2", "class": "3-11"}, {"period": 3, "subject": "화2", "class": "3-10"}, {"period": 4, "subject": "화2", "class": "3-9"}, {"period": 6, "subject": "화2", "class": "3-13"}]}, "total_hours": "18", "homeroom": "3-12", "remarks": null}, {"no": "57", "name": "정용숙", "schedule": {"월": [{"period": 3, "subject": "과실", "class": "1-10"}, {"period": 5, "subject": "과실", "class": "1-7"}, {"period": 7, "subject": "과실", "class": "1-3"}], "화": [{"period": 2, "subject": "과실", "class": "1-12"}, {"period": 4, "subject": "융과1", "class": "3-8"}, {"period": 6, "subject": "과실", "class": "1-5"}], "수": [{"period": 1, "subject": "과실", "class": "1-4"}, {"period": 3, "subject": "과실", "class": "1-11"}, {"period": 5, "subject": "과실", "class": "1-2"}, {"period": 7, "subject": "동아", "class": "3화학"}], "목": [{"period": 2, "subject": "과실", "class": "1-8"}, {"period": 5, "subject": "융과1", "class": "3-4"}, {"period": 6, "subject": "융과1", "class": "3-9"}], "금": [{"period": 2, "subject": "과실", "class": "1-13"}, {"period": 3, "subject": "과실", "class": "1-1"}, {"period": 5, "subject": "과실", "class": "1-6"}, {"period": 7, "subject": "과실", "class": "1-9"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "58", "name": "조민호", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-8"}, {"period": 5, "subject": "융과2", "class": "3-9"}, {"period": 7, "subject": "과토", "class": "3-10"}], "화": [{"period": 1, "subject": "융과2", "class": "3-11"}, {"period": 3, "subject": "과토", "class": "3-9"}, {"period": 5, "subject": "융과2", "class": "3-5"}, {"period": 7, "subject": "융과2", "class": "3-7"}], "수": [{"period": 2, "subject": "과토", "class": "3-4"}, {"period": 4, "subject": "융과2", "class": "3-8"}, {"period": 7, "subject": "동아", "class": "3생물"}], "목": [{"period": 3, "subject": "과토", "class": "3-10"}, {"period": 5, "subject": "융과2", "class": "3-6"}, {"period": 6, "subject": "융과2", "class": "3-10"}], "금": [{"period": 2, "subject": "과토", "class": "3-4"}, {"period": 4, "subject": "융과2", "class": "3-4"}, {"period": 6, "subject": "과토", "class": "3-9"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "59", "name": "배규호", "schedule": {"월": [{"period": 2, "subject": "생2", "class": "3-4"}, {"period": 4, "subject": "생2", "class": "3-6"}, {"period": 6, "subject": "생2", "class": "3-12"}, {"period": 7, "subject": "생2", "class": "3-14"}], "화": [{"period": 3, "subject": "생2", "class": "3-10"}, {"period": 4, "subject": "생2", "class": "3-13"}, {"period": 6, "subject": "생2", "class": "3-5"}, {"period": 7, "subject": "생2", "class": "3-11"}], "수": [{"period": 3, "subject": "생2", "class": "3-12"}, {"period": 4, "subject": "생2", "class": "3-4"}], "목": [{"period": 4, "subject": "생2", "class": "3-5"}, {"period": 6, "subject": "생2", "class": "3-14"}, {"period": 7, "subject": "생2", "class": "3-6"}], "금": [{"period": 2, "subject": "생2", "class": "3-10"}, {"period": 3, "subject": "생2", "class": "3-11"}, {"period": 5, "subject": "생2", "class": "3-13"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "60", "name": "김민성", "schedule": {"월": [{"period": 2, "subject": "생명", "class": "2-12"}, {"period": 3, "subject": "생명", "class": "2-13"}, {"period": 5, "subject": "생명", "class": "2-11"}, {"period": 6, "subject": "생명", "class": "2-9"}], "화": [{"period": 1, "subject": "생명", "class": "2-9"}, {"period": 4, "subject": "생명", "class": "2-11"}, {"period": 6, "subject": "생명", "class": "2-6"}, {"period": 7, "subject": "생명", "class": "2-12"}], "수": [{"period": 1, "subject": "생명", "class": "2-12"}, {"period": 3, "subject": "생명", "class": "2-6"}, {"period": 4, "subject": "생명", "class": "2-10"}], "목": [{"period": 3, "subject": "생명", "class": "2-13"}, {"period": 5, "subject": "생명", "class": "2-10"}, {"period": 6, "subject": "생명", "class": "2-6"}], "금": [{"period": 1, "subject": "생명", "class": "2-11"}, {"period": 3, "subject": "생명", "class": "2-13"}, {"period": 4, "subject": "생명", "class": "2-9"}, {"period": 7, "subject": "생명", "class": "2-10"}]}, "total_hours": "18", "homeroom": "2-8", "remarks": null}, {"no": "61", "name": "강기훈", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-11"}, {"period": 2, "subject": "통생", "class": "1-11"}, {"period": 5, "subject": "통생", "class": "1-8"}, {"period": 6, "subject": "통생", "class": "1-5"}], "화": [{"period": 3, "subject": "생명", "class": "2-5"}, {"period": 4, "subject": "통생", "class": "1-1"}, {"period": 7, "subject": "통생", "class": "1-13"}], "수": [{"period": 1, "subject": "통생", "class": "1-10"}, {"period": 2, "subject": "생명", "class": "2-5"}, {"period": 5, "subject": "통생", "class": "1-4"}], "목": [{"period": 2, "subject": "통생", "class": "1-7"}, {"period": 5, "subject": "통생", "class": "1-9"}, {"period": 7, "subject": "통생", "class": "1-6"}], "금": [{"period": 1, "subject": "통생", "class": "1-3"}, {"period": 3, "subject": "통생", "class": "1-12"}, {"period": 5, "subject": "생명", "class": "2-5"}, {"period": 6, "subject": "통생", "class": "1-2"}]}, "total_hours": "17", "homeroom": "1-11", "remarks": null}, {"no": "62", "name": "조영제", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-5"}, {"period": 3, "subject": "지2", "class": "3-7"}, {"period": 4, "subject": "지2B", "class": "3-4"}, {"period": 6, "subject": "지2", "class": "3-8"}], "화": [{"period": 2, "subject": "지2", "class": "3-9"}, {"period": 5, "subject": "지2", "class": "3-12"}, {"period": 6, "subject": "지2A", "class": "3-4"}], "수": [{"period": 1, "subject": "지2", "class": "3-8"}, {"period": 3, "subject": "통지", "class": "1-6"}, {"period": 5, "subject": "통지", "class": "1-5"}], "목": [{"period": 4, "subject": "지2A", "class": "3-4"}, {"period": 6, "subject": "지2", "class": "3-7"}, {"period": 7, "subject": "지2B", "class": "3-4"}], "금": [{"period": 1, "subject": "지2", "class": "3-12"}, {"period": 2, "subject": "지2", "class": "3-9"}, {"period": 5, "subject": "통지", "class": "1-7"}]}, "total_hours": "16", "homeroom": "1-5", "remarks": null}, {"no": "63", "name": "정인영", "schedule": {"월": [{"period": 3, "subject": "지2", "class": "3-13"}, {"period": 4, "subject": "지2", "class": "3-14"}, {"period": 6, "subject": "통지", "class": "1-12"}], "화": [{"period": 1, "subject": "통지", "class": "1-2"}, {"period": 2, "subject": "통지", "class": "1-13"}, {"period": 4, "subject": "통지", "class": "1-4"}, {"period": 6, "subject": "통지", "class": "1-9"}], "수": [{"period": 1, "subject": "지2", "class": "3-14"}, {"period": 5, "subject": "통지", "class": "1-11"}, {"period": 7, "subject": "동아", "class": "2-12"}], "목": [{"period": 3, "subject": "통지", "class": "1-3"}, {"period": 5, "subject": "지2", "class": "3-13"}, {"period": 6, "subject": "통지", "class": "1-1"}], "금": [{"period": 1, "subject": "통지", "class": "1-8"}, {"period": 5, "subject": "통지", "class": "1-10"}, {"period": 7, "subject": "진금", "class": "3-1"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "64", "name": "윤상호", "schedule": {"월": [{"period": 3, "subject": "지구", "class": "2-5"}, {"period": 4, "subject": "과토", "class": "3-11"}, {"period": 6, "subject": "인철", "class": "1-4"}, {"period": 7, "subject": "인철", "class": "1-6"}], "화": [{"period": 3, "subject": "인철", "class": "1-5"}, {"period": 5, "subject": "인철", "class": "1-3"}, {"period": 7, "subject": "지구", "class": "2-5"}], "수": [{"period": 2, "subject": "과토", "class": "3-12"}, {"period": 5, "subject": "진수", "class": "3-12"}, {"period": 7, "subject": "동아", "class": "3학습3"}], "목": [{"period": 2, "subject": "인철", "class": "1-6"}, {"period": 5, "subject": "지구", "class": "2-5"}, {"period": 7, "subject": "과토", "class": "3-11"}], "금": [{"period": 1, "subject": "인철", "class": "1-4"}, {"period": 2, "subject": "과토", "class": "3-12"}, {"period": 4, "subject": "인철", "class": "1-3"}, {"period": 7, "subject": "인철", "class": "1-5"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "65", "name": "장영규", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-6"}, {"period": 2, "subject": "지구", "class": "2-13"}, {"period": 5, "subject": "지구", "class": "2-8"}, {"period": 7, "subject": "지구", "class": "2-6"}], "화": [{"period": 2, "subject": "지구", "class": "2-7"}, {"period": 3, "subject": "지구", "class": "2-8"}, {"period": 5, "subject": "지구", "class": "2-13"}, {"period": 6, "subject": "지구", "class": "2-12"}], "수": [{"period": 4, "subject": "지구", "class": "2-7"}, {"period": 5, "subject": "진로", "class": "2-6"}, {"period": 7, "subject": "동아", "class": "2-6"}], "목": [{"period": 4, "subject": "지구", "class": "2-8"}, {"period": 6, "subject": "지구", "class": "2-12"}, {"period": 7, "subject": "지구", "class": "2-6"}], "금": [{"period": 1, "subject": "지구", "class": "2-13"}, {"period": 2, "subject": "지구", "class": "2-6"}, {"period": 5, "subject": "지구", "class": "2-12"}, {"period": 7, "subject": "지구", "class": "2-7"}]}, "total_hours": "18", "homeroom": "2-6", "remarks": null}, {"no": "66", "name": "김희재", "schedule": {"월": [{"period": 2, "subject": "음악", "class": "1-3"}, {"period": 5, "subject": "음악", "class": "1-2"}, {"period": 7, "subject": "음악", "class": "1-1"}], "화": [{"period": 1, "subject": "음악", "class": "1-4"}, {"period": 5, "subject": "음악", "class": "1-6"}, {"period": 6, "subject": "인철", "class": "1-7"}], "수": [{"period": 1, "subject": "음악", "class": "1-2"}, {"period": 2, "subject": "음악", "class": "1-5"}, {"period": 5, "subject": "진로", "class": "2-5"}, {"period": 7, "subject": "동아", "class": "3학습4"}], "목": [{"period": 3, "subject": "음악", "class": "1-6"}, {"period": 4, "subject": "음악", "class": "1-1"}, {"period": 6, "subject": "음악", "class": "1-3"}], "금": [{"period": 2, "subject": "음악", "class": "1-4"}, {"period": 3, "subject": "인철", "class": "1-7"}, {"period": 5, "subject": "음악", "class": "1-5"}, {"period": 7, "subject": "진금", "class": "3-7"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "67", "name": "양영주", "schedule": {"월": [{"period": 2, "subject": "미술", "class": "1-8"}, {"period": 4, "subject": "미술", "class": "1-11"}, {"period": 6, "subject": "미술", "class": "1-9"}], "화": [{"period": 3, "subject": "미술", "class": "1-13"}, {"period": 5, "subject": "미술", "class": "1-7"}, {"period": 6, "subject": "미술", "class": "1-10"}], "수": [{"period": 2, "subject": "미술", "class": "1-9"}, {"period": 3, "subject": "미술", "class": "1-12"}, {"period": 5, "subject": "진로", "class": "2-4"}, {"period": 7, "subject": "동아", "class": "3미술"}], "목": [{"period": 3, "subject": "미술", "class": "1-13"}, {"period": 5, "subject": "미술", "class": "1-8"}, {"period": 7, "subject": "미술", "class": "1-12"}], "금": [{"period": 1, "subject": "미술", "class": "1-7"}, {"period": 2, "subject": "미술", "class": "1-10"}, {"period": 5, "subject": "미술", "class": "1-11"}, {"period": 7, "subject": "진금", "class": "3-12"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "68", "name": "김영순", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-10"}, {"period": 5, "subject": "스포", "class": "2-9"}, {"period": 7, "subject": "스포", "class": "2-8"}], "화": [{"period": 3, "subject": "스포", "class": "2-12"}, {"period": 4, "subject": "스포", "class": "2-10"}, {"period": 6, "subject": "스포", "class": "2-11"}, {"period": 7, "subject": "스포", "class": "2-13"}], "수": [{"period": 2, "subject": "스포", "class": "2-8"}, {"period": 3, "subject": "스포", "class": "2-9"}, {"period": 5, "subject": "진수", "class": "3-3"}, {"period": 7, "subject": "동아", "class": "2-8"}], "목": [{"period": 3, "subject": "스포", "class": "2-10"}, {"period": 5, "subject": "스포", "class": "2-11"}], "금": [{"period": 4, "subject": "스포", "class": "2-12"}, {"period": 5, "subject": "스포", "class": "2-13"}, {"period": 7, "subject": "진금", "class": "3-3"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "69", "name": "이대수", "schedule": {"월": [{"period": 2, "subject": "체육", "class": "1-9"}, {"period": 3, "subject": "체육", "class": "1-13"}, {"period": 5, "subject": "체육", "class": "1-10"}], "화": [{"period": 1, "subject": "체육", "class": "1-11"}, {"period": 2, "subject": "체육", "class": "1-9"}, {"period": 4, "subject": "체육", "class": "1-2"}, {"period": 6, "subject": "체육", "class": "1-1"}, {"period": 7, "subject": "체육", "class": "1-12"}], "수": [{"period": 4, "subject": "체육", "class": "1-10"}, {"period": 5, "subject": "진수", "class": "3-9"}], "목": [{"period": 2, "subject": "체육", "class": "1-12"}, {"period": 5, "subject": "체육", "class": "1-11"}, {"period": 7, "subject": "체육", "class": "1-13"}], "금": [{"period": 2, "subject": "체육", "class": "1-1"}, {"period": 5, "subject": "체육", "class": "1-2"}, {"period": 7, "subject": "진금", "class": "3-9"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "70", "name": "정선욱", "schedule": {"월": [{"period": 2, "subject": "운건", "class": "3-11"}, {"period": 6, "subject": "운건", "class": "3-3"}], "화": [{"period": 2, "subject": "운건", "class": "3-2"}, {"period": 4, "subject": "운건", "class": "3-6"}, {"period": 6, "subject": "운건", "class": "3-10"}, {"period": 7, "subject": "운건", "class": "3-1"}], "수": [{"period": 1, "subject": "운건", "class": "3-9"}, {"period": 2, "subject": "운건", "class": "3-7"}, {"period": 7, "subject": "동아", "class": "3-14"}], "목": [{"period": 3, "subject": "운건", "class": "3-4"}, {"period": 5, "subject": "운건", "class": "3-12"}, {"period": 7, "subject": "운건", "class": "3-13"}], "금": [{"period": 1, "subject": "운건", "class": "3-14"}, {"period": 3, "subject": "운건", "class": "3-5"}, {"period": 5, "subject": "운건", "class": "3-8"}, {"period": 7, "subject": "진금", "class": "3-8"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "71", "name": "송민석", "schedule": {"월": [{"period": 2, "subject": "스포", "class": "2-5"}, {"period": 4, "subject": "스포", "class": "2-6"}, {"period": 5, "subject": "스포", "class": "2-1"}, {"period": 7, "subject": "스포", "class": "2-7"}], "화": [{"period": 1, "subject": "스포", "class": "2-1"}, {"period": 2, "subject": "스포", "class": "2-4"}, {"period": 4, "subject": "스포", "class": "2-2"}], "수": [{"period": 1, "subject": "스포", "class": "2-3"}, {"period": 3, "subject": "스포", "class": "2-7"}, {"period": 5, "subject": "진로", "class": "2-13"}, {"period": 7, "subject": "동아", "class": "2-9"}], "목": [{"period": 3, "subject": "스포", "class": "2-2"}], "금": [{"period": 1, "subject": "스포", "class": "2-4"}, {"period": 4, "subject": "스포", "class": "2-5"}, {"period": 6, "subject": "스포", "class": "2-3"}, {"period": 7, "subject": "스포", "class": "2-6"}]}, "total_hours": "16", "homeroom": null, "remarks": null}, {"no": "72", "name": "김찬일", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "1-8"}, {"period": 3, "subject": "체육", "class": "1-6"}, {"period": 5, "subject": "체육", "class": "1-3"}], "화": [{"period": 1, "subject": "체육", "class": "1-5"}, {"period": 2, "subject": "체육", "class": "1-7"}, {"period": 5, "subject": "체육", "class": "1-4"}, {"period": 7, "subject": "체육", "class": "1-8"}], "수": [{"period": 4, "subject": "체육", "class": "1-3"}, {"period": 5, "subject": "진로", "class": "2-11"}, {"period": 7, "subject": "동아", "class": "1-8"}], "목": [{"period": 4, "subject": "체육", "class": "1-6"}, {"period": 6, "subject": "체육", "class": "1-5"}], "금": [{"period": 3, "subject": "체육", "class": "1-8"}, {"period": 5, "subject": "체육", "class": "1-4"}, {"period": 6, "subject": "체육", "class": "1-7"}]}, "total_hours": "15", "homeroom": "1-8", "remarks": null}, {"no": "73", "name": "김진태", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-7"}, {"period": 3, "subject": "공일", "class": "3-12"}, {"period": 5, "subject": "공일", "class": "3-14"}, {"period": 6, "subject": "공일", "class": "3-13"}], "화": [{"period": 1, "subject": "정보", "class": "2-7"}, {"period": 3, "subject": "공일", "class": "3-12"}, {"period": 4, "subject": "공일", "class": "3-10"}, {"period": 6, "subject": "공일", "class": "3-11"}], "수": [{"period": 1, "subject": "공일", "class": "3-13"}, {"period": 3, "subject": "공일", "class": "3-14"}, {"period": 5, "subject": "진수", "class": "3-13"}, {"period": 7, "subject": "동아", "class": "2-7"}], "목": [{"period": 5, "subject": "정보", "class": "2-7"}, {"period": 7, "subject": "공일", "class": "3-10"}], "금": [{"period": 2, "subject": "정보", "class": "2-7"}, {"period": 4, "subject": "공일", "class": "3-11"}, {"period": 7, "subject": "진금", "class": "3-13"}]}, "total_hours": "17", "homeroom": "2-7", "remarks": null}, {"no": "74", "name": "김정현", "schedule": {"월": [{"period": 1, "subject": "자율", "class": "2-12"}, {"period": 3, "subject": "공일", "class": "3-4"}, {"period": 5, "subject": "공일", "class": "3-6"}, {"period": 7, "subject": "정보", "class": "2-11"}], "화": [{"period": 1, "subject": "공일", "class": "3-7"}, {"period": 3, "subject": "공일", "class": "3-4"}, {"period": 5, "subject": "공일", "class": "3-8"}, {"period": 6, "subject": "공일", "class": "3-9"}], "수": [{"period": 2, "subject": "정보", "class": "2-11"}, {"period": 3, "subject": "공일", "class": "3-6"}, {"period": 5, "subject": "진로", "class": "2-12"}, {"period": 7, "subject": "동아", "class": "3멀티"}], "목": [{"period": 3, "subject": "공일", "class": "3-8"}, {"period": 5, "subject": "공일", "class": "3-9"}], "금": [{"period": 3, "subject": "정보", "class": "2-11"}, {"period": 4, "subject": "공일", "class": "3-7"}, {"period": 7, "subject": "진금", "class": "3-14"}]}, "total_hours": "17", "homeroom": null, "remarks": null}, {"no": "75", "name": "전윤석", "schedule": {"월": [{"period": 3, "subject": "정보", "class": "2-10"}, {"period": 4, "subject": "정보", "class": "2-9"}, {"period": 6, "subject": "인철", "class": "1-8"}], "화": [{"period": 2, "subject": "정보", "class": "2-8"}, {"period": 4, "subject": "인철", "class": "1-9"}, {"period": 6, "subject": "정보", "class": "2-4"}, {"period": 7, "subject": "정보", "class": "2-10"}], "수": [{"period": 1, "subject": "정보", "class": "2-8"}, {"period": 3, "subject": "정보", "class": "2-4"}, {"period": 5, "subject": "진로", "class": "2-7"}, {"period": 7, "subject": "동아", "class": "1-7"}], "목": [{"period": 4, "subject": "정보", "class": "2-10"}, {"period": 6, "subject": "정보", "class": "2-4"}, {"period": 7, "subject": "정보", "class": "2-9"}], "금": [{"period": 2, "subject": "인철", "class": "1-9"}, {"period": 4, "subject": "인철", "class": "1-8"}, {"period": 6, "subject": "정보", "class": "2-9"}, {"period": 7, "subject": "정보", "class": "2-8"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "76", "name": "이규철", "schedule": {"월": [{"period": 3, "subject": "일본", "class": "2-6"}, {"period": 5, "subject": "일본", "class": "2-2"}, {"period": 6, "subject": "일본", "class": "2-3"}], "화": [{"period": 4, "subject": "일본", "class": "2-3"}, {"period": 6, "subject": "일본", "class": "2-5"}, {"period": 7, "subject": "일본", "class": "2-6"}], "수": [{"period": 3, "subject": "일본", "class": "2-5"}, {"period": 4, "subject": "일본", "class": "2-2"}], "목": [{"period": 5, "subject": "일본", "class": "2-6"}, {"period": 6, "subject": "일본", "class": "2-5"}], "금": [{"period": 3, "subject": "일본", "class": "2-2"}, {"period": 4, "subject": "일본", "class": "2-3"}]}, "total_hours": "12", "homeroom": null, "remarks": null}, {"no": "77", "name": "이은진", "schedule": {"월": [{"period": 3, "subject": "일2", "class": "3-1"}, {"period": 4, "subject": "인철", "class": "1-10"}, {"period": 6, "subject": "일본", "class": "2-1"}, {"period": 7, "subject": "인철", "class": "1-11"}], "화": [{"period": 1, "subject": "인철", "class": "1-12"}, {"period": 3, "subject": "일2", "class": "3-1"}, {"period": 4, "subject": "일본", "class": "2-1"}, {"period": 7, "subject": "일2", "class": "3-3"}], "수": [{"period": 2, "subject": "일2", "class": "3-2"}, {"period": 4, "subject": "인철", "class": "1-13"}, {"period": 7, "subject": "동아", "class": "1-10"}], "목": [{"period": 3, "subject": "인철", "class": "1-12"}, {"period": 4, "subject": "인철", "class": "1-11"}, {"period": 6, "subject": "인철", "class": "1-10"}], "금": [{"period": 2, "subject": "일2", "class": "3-3"}, {"period": 3, "subject": "일본", "class": "2-1"}, {"period": 5, "subject": "일2", "class": "3-2"}, {"period": 6, "subject": "인철", "class": "1-13"}]}, "total_hours": "18", "homeroom": null, "remarks": null}, {"no": "78", "name": "이소영", "schedule": {"월": [{"period": 3, "subject": "한문", "class": "3-5"}], "화": [{"period": 3, "subject": "한문", "class": "3-5"}], "수": [], "목": [], "금": []}, "total_hours": "2", "homeroom": null, "remarks": null}, {"no": "79", "name": "박용수", "schedule": {"월": [{"period": 5, "subject": "진로", "class": "1-1"}, {"period": 6, "subject": "진로", "class": "1-11"}], "화": [{"period": 2, "subject": "진로", "class": "1-10"}, {"period": 4, "subject": "진로", "class": "1-7"}, {"period": 7, "subject": "진로", "class": "1-5"}], "수": [{"period": 1, "subject": "진로", "class": "1-8"}, {"period": 2, "subject": "진로", "class": "1-3"}, {"period": 5, "subject": "진로", "class": "1-6"}], "목": [{"period": 4, "subject": "진로", "class": "1-13"}, {"period": 6, "subject": "진로", "class": "1-4"}, {"period": 7, "subject": "진로", "class": "1-9"}], "금": [{"period": 1, "subject": "진로", "class": "1-2"}, {"period": 5, "subject": "진로", "class": "1-12"}]}, "total_hours": "13", "homeroom": null, "remarks": null}, {"no": "80", "name": "현지환", "schedule": {"월": [], "화": [], "수": [{"period": 7, "subject": "동아", "class": "3위클"}], "목": [], "금": []}, "total_hours": "1", "homeroom": null, "remarks": null}, {"no": "81", "name": "장수정", "schedule": {"월": [], "화": [], "수": [{"period": 7, "subject": "동아", "class": "3학습5"}], "목": [], "금": []}, "total_hours": "1", "homeroom": null, "remarks": null}, {"no": "82", "name": "온라인", "schedule": {"월": [{"period": 3, "subject": "스페인", "class": "3학습4"}], "화": [{"period": 3, "subject": "스페인", "class": "3학습4"}], "수": [], "목": [], "금": []}, "total_hours": "2", "homeroom": null, "remarks": null}];
+
+const DAYS = ['월','화','수','목','금'];
+const PERIODS = [1,2,3,4,5,6,7];
+let todayDay = null;
+
+// 영남고 실제 종 치는 시간: 1교시 08:30 시작, 50분 수업/10분 휴식, 점심 12:20~13:30, 7교시 16:20 종료
+const BELL_SCHEDULE = [
+  {period:1, start:'08:30', end:'09:20'},
+  {period:2, start:'09:30', end:'10:20'},
+  {period:3, start:'10:30', end:'11:20'},
+  {period:4, start:'11:30', end:'12:20'},
+  {period:'lunch', start:'12:20', end:'13:30'},
+  {period:5, start:'13:30', end:'14:20'},
+  {period:6, start:'14:30', end:'15:20'},
+  {period:7, start:'15:30', end:'16:20'},
+];
+
+function toMinutes(hhmm){
+  const [h,m] = hhmm.split(':').map(Number);
+  return h*60+m;
+}
+
+// '지금' 표시는 각 교시 시작 5분 전부터 끝난 5분 후까지, 교시 진행 중 계속 켜져 있습니다.
+function getCurrentPeriod(){
+  const now = new Date();
+  const curMin = now.getHours()*60 + now.getMinutes();
+  for(const b of BELL_SCHEDULE){
+    const startMin = toMinutes(b.start) - 5;
+    const endMin = toMinutes(b.end) + 5;
+    if(curMin >= startMin && curMin <= endMin) return b.period;
+  }
+  return null;
+}
+let currentPeriod = null;
+
+function recomputeTimeState(){
+  const idx = new Date().getDay();
+  todayDay = (idx>=1 && idx<=5) ? DAYS[idx-1] : null;
+  currentPeriod = todayDay ? getCurrentPeriod() : null;
+}
+recomputeTimeState();
+
+// 매번 다시 그리지 않고, 다음 '교시 시작/종료 경계' 시점에만 정확히 한 번 갱신 (가볍게)
+const BOUNDARY_MINUTES = [];
+function rebuildBoundaryMinutes(){
+  BOUNDARY_MINUTES.length = 0;
+  BELL_SCHEDULE.forEach(b=>{
+    BOUNDARY_MINUTES.push(toMinutes(b.start)-5);
+    BOUNDARY_MINUTES.push(toMinutes(b.end)+5);
+  });
+  BOUNDARY_MINUTES.sort((a,b)=>a-b);
+}
+rebuildBoundaryMinutes();
+
+function refreshCurrentView(){
+  recomputeTimeState();
+  if(mode==='teacher' && currentTeacherObj){
+    renderTeacher(currentTeacherObj);
+  } else if(mode==='class' && selectedKey){
+    renderClass(selectedKey);
+  }
+}
+
+function scheduleNextTimeUpdate(){
+  const now = new Date();
+  const day = now.getDay();
+  const curMin = now.getHours()*60 + now.getMinutes();
+  let target = null;
+
+  if(day>=1 && day<=5){
+    const nextMin = BOUNDARY_MINUTES.find(m=>m>curMin);
+    if(nextMin!==undefined){
+      target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(nextMin/60), nextMin%60, 2, 0);
+    }
+  }
+  if(!target){
+    const firstMin = BOUNDARY_MINUTES[0];
+    let addDays = 1;
+    while([0,6].includes((day+addDays)%7)) addDays++;
+    target = new Date(now.getFullYear(), now.getMonth(), now.getDate()+addDays, Math.floor(firstMin/60), firstMin%60, 2, 0);
+  }
+  const delay = Math.max(target - now, 1000);
+  setTimeout(()=>{
+    refreshCurrentView();
+    scheduleNextTimeUpdate();
+  }, delay);
+}
+scheduleNextTimeUpdate();
+
+// ---- build class -> schedule reverse index, and class -> homeroom teacher ----
+const classSchedule = {};   // { '3-10': { '월':[{period,subject,teacher}], ... } }
+const classHomeroom = {};
+const classList = [];
+const classByGrade = {};
+const gradeOrder = [];
+
+function rebuildFromTeachers(){
+  Object.keys(classSchedule).forEach(k=>delete classSchedule[k]);
+  Object.keys(classHomeroom).forEach(k=>delete classHomeroom[k]);
+
+  TEACHERS.forEach(t=>{
+    if(t.homeroom){ classHomeroom[t.homeroom] = t.name; }
+    DAYS.forEach(day=>{
+      (t.schedule[day]||[]).forEach(p=>{
+        if(!p.class) return;
+        if(!classSchedule[p.class]) classSchedule[p.class] = {};
+        if(!classSchedule[p.class][day]) classSchedule[p.class][day] = [];
+        classSchedule[p.class][day].push({period:p.period, subject:p.subject, teacher:t.name});
+      });
+    });
+  });
+
+  classList.length = 0;
+  classList.push(...Object.keys(classSchedule).sort((a,b)=>{
+    const pa=a.split('-'), pb=b.split('-');
+    if(pa[0]!==pb[0]) return pa[0].localeCompare(pb[0]);
+    return (parseInt(pa[1])||0)-(parseInt(pb[1])||0) || a.localeCompare(b);
+  }));
+
+  Object.keys(classByGrade).forEach(k=>delete classByGrade[k]);
+  classList.forEach(c=>{
+    const m = c.match(/^(\d)-(\d+)$/);
+    const grade = m ? m[1] : '기타';
+    if(!classByGrade[grade]) classByGrade[grade] = [];
+    classByGrade[grade].push(c);
+  });
+  gradeOrder.length = 0;
+  gradeOrder.push(...Object.keys(classByGrade).sort((a,b)=>{
+    if(a==='기타') return 1;
+    if(b==='기타') return -1;
+    return a.localeCompare(b);
+  }));
+
+  UNGROUPED_NAMES.length = 0;
+  UNGROUPED_NAMES.push(...TEACHERS.map(t=>t.name).filter(n=>!GROUPED_NAME_SET.has(n)));
+  ORDERED_TEACHER_NAMES.length = 0;
+  ORDERED_TEACHER_NAMES.push(...SUBJECT_GROUPS.flatMap(g=>g.teachers), ...UNGROUPED_NAMES);
+}
+
+// ---- 묶음 선택과목: 같은 시간대에 동시 개설되어 따로 교체할 수 없는 선택과목 그룹 ----
+// (2026-1학기 선택과목 편성 현황표 기준)
+const ELECTIVE_BLOCKS = [
+  { slots:[['월',4],['화',5],['금',3]], teachers:['김강석','김화백'] },                         // 3학년 사회 - 동아시아사/생활과윤리
+  { slots:[['월',2],['목',7]], teachers:['배정엽','조민경'] },                                  // 3학년 사회 - 국제경제/한국사회의이해
+  { slots:[['월',2],['수',4]], teachers:['배규호','류승현','이지훈'] },                          // 3학년 과학(3A) - 생명과학Ⅱ/화학Ⅱ/물리학Ⅱ
+  { slots:[['화',6],['목',4]], teachers:['조영제','배규호','류승현'] },                          // 3학년 과학(3B) - 지구과학Ⅱ/생명과학Ⅱ/화학Ⅱ
+  { slots:[['월',4],['목',7]], teachers:['조영제','이지훈','배규호'] },                          // 3학년 과학(3C) - 지구과학Ⅱ/물리학Ⅱ/생명과학Ⅱ
+  { slots:[['월',3],['화',3]], teachers:['온라인','이은진','김정현','이소영','김진태'] },          // 3학년 제2외국어 진로선택
+  { slots:[['수',2],['금',2]], teachers:['황준식','윤상호','조민호','주원순','정승호','권재현'] },   // 3학년 교양
+  { slots:[['화',3],['수',2],['금',5]], teachers:['김화백','최윤호','배경섭','심형엽','강기훈','이지훈'] },   // 2학년 탐구·교양(2A)
+  { slots:[['월',3],['화',7],['목',5]], teachers:['김화백','최윤호','배경섭','류승현','윤상호','이규철'] }, // 2학년 탐구·교양(2B)
+  { slots:[['월',7],['목',7],['금',2]], teachers:['김화백','이경민','심형엽','류승현','장영규'] },  // 2학년 탐구·교양(2C)
+  { slots:[['화',6],['수',3],['목',6]], teachers:['전윤석','이규철','김민성'] },                  // 2학년 탐구·교양(2D)
+];
+const ELECTIVE_LOCK_SET = new Set();
+ELECTIVE_BLOCKS.forEach(block=>{
+  block.teachers.forEach(name=>{
+    block.slots.forEach(([day,period])=>{
+      ELECTIVE_LOCK_SET.add(`${name}|${day}|${period}`);
+    });
+  });
+});
+function isLocked(name, day, period){
+  return ELECTIVE_LOCK_SET.has(`${name}|${day}|${period}`);
+}
+
+// 자율학습/동아리는 항상 교체 불가. 진로는 1학년만 교체 가능하되, 월요일 1교시 진로는 학년 무관하게 항상 불가.
+const ALWAYS_NO_SWAP_SUBJECTS = new Set(['자율','동아']);
+function isNoSwapSubject(subject, cls, day, period){
+  if(!subject) return false;
+  if(ALWAYS_NO_SWAP_SUBJECTS.has(subject)) return true;
+  if(subject === '진로'){
+    const isGrade1 = !!(cls && cls.startsWith('1-'));
+    const isMonP1 = (day==='월' && period===1);
+    return !(isGrade1 && !isMonP1);
+  }
+  return false;
+}
+
+// ---- 과목별 교사 그룹 (지정한 순서 그대로) ----
+const SUBJECT_GROUPS = [
+  { subject:'국어', teachers:['최영수','이인태','윤익희','손병락','박재정','김창식','남영동','문광섭','정희철','정원길','강서영','박한솔'] },
+  { subject:'수학', teachers:['정승호','김종욱','노진석','주원순','이재문','이호정','한지훈','전병화','김영란','이상용','권재현','윤동현','김정훈','김경모','정현석'] },
+  { subject:'영어', teachers:['정훈철','박순옥','김원호','이현호','김진섭','박준형','구본광','권춘혁','황영채','권혜지','도나경'] },
+  { subject:'사회', teachers:['이경민','최윤호','배정엽'] },
+  { subject:'지리', teachers:['배경섭','조민경'] },
+  { subject:'역사', teachers:['심형엽','김강석','권혁준'] },
+  { subject:'윤리', teachers:['김화백','이현재'] },
+  { subject:'물리', teachers:['정선우','박경환','이지훈','황준식'] },
+  { subject:'화학', teachers:['김윤섭','류승현','노병욱','장조은','정용숙'] },
+  { subject:'생물', teachers:['조민호','배규호','김민성','강기훈'] },
+  { subject:'지구과학', teachers:['조영제','정인영','윤상호','장영규'] },
+  { subject:'음악', teachers:['김희재'] },
+  { subject:'미술', teachers:['양영주'] },
+  { subject:'체육', teachers:['김영순','이대수','정선욱','송민석','김찬일'] },
+  { subject:'정보', teachers:['김진태','김정현','전윤석'] },
+  { subject:'일본어', teachers:['이규철','이은진'] },
+  { subject:'한문', teachers:['이소영'] },
+  { subject:'진로/보건/상담', teachers:['박용수','현지환','장수정'] },
+];
+// 위 그룹에 없는 교사(예: 외부 온라인 강사 등)는 전체 목록 맨 뒤에 그대로 붙여 누락을 막음
+const GROUPED_NAME_SET = new Set(SUBJECT_GROUPS.flatMap(g=>g.teachers));
+const UNGROUPED_NAMES = TEACHERS.map(t=>t.name).filter(n=>!GROUPED_NAME_SET.has(n));
+const ORDERED_TEACHER_NAMES = [...SUBJECT_GROUPS.flatMap(g=>g.teachers), ...UNGROUPED_NAMES];
+rebuildFromTeachers();
+const TEACHER_TO_SUBJECT = {};
+SUBJECT_GROUPS.forEach(g=> g.teachers.forEach(name=> { TEACHER_TO_SUBJECT[name] = g.subject; }));
+
+// 보강 후보 정렬용 '동교과' 큰 단위 묶음 (한문은 강사라 어느 교과에도 묶지 않음)
+const DEPARTMENT_OF_SUBJECT = {
+  '국어':'국어과',
+  '수학':'수학과',
+  '영어':'영어과',
+  '사회':'사회과', '지리':'사회과', '역사':'사회과', '윤리':'사회과',
+  '물리':'과학과', '화학':'과학과', '생물':'과학과', '지구과학':'과학과',
+  '미술':'예체능', '음악':'예체능', '체육':'예체능',
+  '일본어':'교양교과', '정보':'교양교과', '진로/보건/상담':'교양교과',
+};
+function getDept(name){
+  const subj = TEACHER_TO_SUBJECT[name];
+  return subj ? (DEPARTMENT_OF_SUBJECT[subj] || null) : null;
+}
+
+const EXT_MAP = {
+  '최영수':'54006',
+  '이인태':'54130',
+  '윤익희':'54124',
+  '손병락':'54011',
+  '박재정':'54139',
+  '김창식':'54108',
+  '남영동':'54041',
+  '문광섭':'54143',
+  '정희철':'54122',
+  '정원길':'54137',
+  '강서영':'54022',
+  '박한솔':'54138',
+  '정승호':'54003',
+  '김종욱':'54008',
+  '노진석':'54101',
+  '주원순':'54126',
+  '이재문':'54140',
+  '이호정':'54117',
+  '한지훈':'54036',
+  '전병화':'54106',
+  '김영란':'54007',
+  '이상용':'54119',
+  '권재현':'54103',
+  '윤동현':'54141',
+  '김정훈':'54114',
+  '김경모':'54039',
+  '정현석':'54129',
+  '정훈철':'54116',
+  '박순옥':'54009',
+  '김원호':'54058',
+  '이현호':'54145',
+  '김진섭':'54102',
+  '박준형':'54142',
+  '구본광':'54107',
+  '권춘혁':'54027',
+  '황영채':'54028',
+  '권혜지':'54021',
+  '도나경':'54052',
+  '이경민':'54105',
+  '최윤호':'54136',
+  '배정엽':'54026',
+  '배경섭':'54123',
+  '조민경':'54024',
+  '심형엽':'54004',
+  '김강석':'54135',
+  '권혁준':'54112',
+  '김화백':'54131',
+  '이현재':'54002',
+  '정선우':'54134',
+  '박경환':'54104',
+  '이지훈':'54132',
+  '황준식':'54025',
+  '김윤섭':'54005',
+  '류승현':'54033',
+  '노병욱':'54125',
+  '장조은':'54133',
+  '정용숙':'54019',
+  '조민호':'54012',
+  '배규호':'54030',
+  '김민성':'54127',
+  '강기훈':'54115',
+  '조영제':'54032',
+  '정인영':'54018',
+  '윤상호':'54016',
+  '장영규':'54121',
+  '김희재':'54017',
+  '양영주':'54015',
+  '김영순':'54040',
+  '이대수':'54042',
+  '정선욱':'54038',
+  '송민석':'54037',
+  '김찬일':'54110',
+  '김진태':'54128',
+  '김정현':'54029',
+  '전윤석':'54031',
+  '이규철':'54113',
+  '이은진':'54034',
+  '이소영':'54014',
+  '박용수':'54051',
+  '현지환':'54049',
+  '장수정':'54023'
+};
+
+let mode = 'teacher'; // teacher | class
+let activeIdx = -1;
+let selectedKey = null;
+let currentTeacherObj = null;
+let selectedSubject = null;
+
+const searchInput = document.getElementById('searchInput');
+const dropdown = document.getElementById('dropdown');
+const sidebarList = document.getElementById('sidebarList');
+const sidebarTitle = document.getElementById('sidebarTitle');
+const sidebarPanel = document.getElementById('sidebarPanel');
+const subjectCol = document.getElementById('subjectCol');
+const subjectChipRow = document.getElementById('subjectChipRow');
+const card = document.getElementById('card');
+const teacherSearchBox = document.getElementById('teacherSearchBox');
+const classSelectBox = document.getElementById('classSelectBox');
+const gradeSelect = document.getElementById('gradeSelect');
+const roomSelect = document.getElementById('roomSelect');
+
+function refreshGradeDropdown(){
+  gradeSelect.innerHTML = '<option value="">학년 선택</option>';
+  gradeOrder.forEach(g=>{
+    const opt = document.createElement('option');
+    opt.value = g;
+    opt.textContent = g==='기타' ? '기타(특별실)' : `${g}학년`;
+    gradeSelect.appendChild(opt);
+  });
+  roomSelect.innerHTML = '<option value="">반 선택</option>';
+}
+refreshGradeDropdown();
+
+function populateRoomSelect(grade){
+  roomSelect.innerHTML = '<option value="">반 선택</option>';
+  (classByGrade[grade]||[]).forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c;
+    const m = c.match(/^(\d)-(\d+)$/);
+    opt.textContent = m ? `${m[2]}반` : c;
+    roomSelect.appendChild(opt);
+  });
+}
+
+gradeSelect.addEventListener('change', ()=>{
+  populateRoomSelect(gradeSelect.value);
+  selectedKey = null;
+  renderPlaceholder();
+});
+
+roomSelect.addEventListener('change', ()=>{
+  if(roomSelect.value) select(roomSelect.value);
+});
+
+function subjectButtonsHtml(itemClass){
+  const allActive = selectedSubject===null ? ' active' : '';
+  let html = `<button class="${itemClass}${allActive}" data-subject="">전체</button>`;
+  SUBJECT_GROUPS.forEach(g=>{
+    const active = g.subject===selectedSubject ? ' active' : '';
+    html += `<button class="${itemClass}${active}" data-subject="${g.subject}">${g.subject}</button>`;
+  });
+  return html;
+}
+
+function renderSubjectSelectors(){
+  if(mode!=='teacher'){
+    subjectCol.innerHTML = '';
+    subjectChipRow.innerHTML = '';
+    sidebarPanel.classList.remove('two-col');
+    return;
+  }
+  sidebarPanel.classList.add('two-col');
+  subjectCol.innerHTML = subjectButtonsHtml('subject-item');
+  subjectChipRow.innerHTML = subjectButtonsHtml('subject-chip');
+}
+
+function handleSubjectClick(e){
+  const btn = e.target.closest('button[data-subject]');
+  if(!btn) return;
+  selectedSubject = btn.dataset.subject || null;
+  searchInput.value = '';
+  renderSubjectSelectors();
+  refreshLists();
+}
+subjectCol.addEventListener('click', handleSubjectClick);
+subjectChipRow.addEventListener('click', handleSubjectClick);
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    selectedKey = null;
+    selectedSubject = null;
+    searchInput.value = '';
+    closeDropdown();
+    if(mode==='teacher'){
+      teacherSearchBox.style.display = '';
+      classSelectBox.style.display = 'none';
+    } else {
+      teacherSearchBox.style.display = 'none';
+      classSelectBox.style.display = '';
+      gradeSelect.value = '';
+      roomSelect.innerHTML = '<option value="">반 선택</option>';
+    }
+    sidebarTitle.textContent = mode==='teacher' ? `교사 목록 (${TEACHERS.length})` : `학급 목록 (${classList.length})`;
+    renderPlaceholder();
+    renderSubjectSelectors();
+    refreshLists();
+  });
+});
+
+function closeDropdown(){ dropdown.classList.remove('open'); activeIdx=-1; }
+
+function renderPlaceholder(){
+  const msg = mode==='teacher'
+    ? '검색창에 <b>선생님 이름</b>을 입력하거나, 옆 목록에서 선택해보세요.'
+    : '<b>학년</b>과 <b>반</b>을 선택하거나, 옆 목록에서 선택해보세요.';
+  card.innerHTML = `<div class="placeholder">${msg}</div>`;
+}
+
+function getMatches(q){
+  if(mode==='teacher'){
+    if(q){
+      return TEACHERS.filter(t=>t.name.includes(q));
+    }
+    if(selectedSubject){
+      const names = (SUBJECT_GROUPS.find(g=>g.subject===selectedSubject)||{teachers:[]}).teachers;
+      return names.map(name=>TEACHERS.find(t=>t.name===name)).filter(Boolean);
+    }
+    return TEACHERS.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  }
+  return q ? classList.filter(c=>c.includes(q)) : classList;
+}
+
+
+function itemHTML(m){
+  const key = mode==='teacher' ? m.name : m;
+  const activeCls = key===selectedKey ? ' active' : '';
+  if(mode==='teacher'){
+    return `<div class="list-item${activeCls}" data-key="${m.name}"><span>${m.name}</span><small>${m.homeroom?(m.homeroom+' 담임'):''}</small></div>`;
+  }
+  return `<div class="list-item${activeCls}" data-key="${m}"><span>${m}</span><small>${classHomeroom[m] ? classHomeroom[m]+' 담임' : ''}</small></div>`;
+}
+
+function refreshLists(){
+  const q = searchInput.value.trim();
+  const matches = getMatches(q);
+
+  if(mode==='teacher' && q && matches.length===1){
+    const subj = TEACHER_TO_SUBJECT[matches[0].name] || null;
+    if(subj !== selectedSubject){
+      selectedSubject = subj;
+      renderSubjectSelectors();
+    }
+  }
+
+  if(q && matches.length===1){
+    const only = matches[0];
+    selectedKey = mode==='teacher' ? only.name : only;
+    if(mode==='teacher') renderTeacher(only); else renderClass(only);
+  }
+
+  const html = matches.length
+    ? matches.map(itemHTML).join('')
+    : `<div class="list-empty">일치하는 ${mode==='teacher'?'교사':'학급'}가 없습니다</div>`;
+  dropdown.innerHTML = html;
+  sidebarList.innerHTML = html;
+  dropdown.classList.toggle('open', q.length>0 && matches.length!==1);
+  activeIdx = -1;
+}
+
+function handleListClick(e){
+  const el = e.target.closest('.list-item');
+  if(!el) return;
+  const key = el.dataset.key;
+  if(mode==='teacher'){
+    const t = TEACHERS.find(x=>x.name===key);
+    if(t) select(t);
+  } else {
+    select(key);
+  }
+}
+dropdown.addEventListener('click', handleListClick);
+sidebarList.addEventListener('click', handleListClick);
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  if(mode==='teacher' && !q && selectedSubject !== null){
+    selectedSubject = null;
+    renderSubjectSelectors();
+  }
+  refreshLists();
+});
+
+searchInput.addEventListener('keydown', e=>{
+  const items = dropdown.querySelectorAll('.list-item');
+  if(!items.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); activeIdx=Math.min(activeIdx+1, items.length-1); updateHl(items); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); activeIdx=Math.max(activeIdx-1,0); updateHl(items); }
+  else if(e.key==='Enter'){ e.preventDefault(); if(activeIdx>=0) items[activeIdx].click(); }
+});
+function updateHl(items){ items.forEach((it,i)=>it.classList.toggle('hl', i===activeIdx)); }
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.search-box')) closeDropdown();
+});
+
+function select(item){
+  selectedKey = mode==='teacher' ? item.name : item;
+  if(mode==='teacher'){
+    renderTeacher(item);
+  } else {
+    renderClass(item);
+  }
+  searchInput.value = '';
+  refreshLists();
+  closeDropdown();
+}
+
+
+function cellInner(p, secondLineKey){
+  if(!p || (!p.subject && !p[secondLineKey])){
+    return `<span class="cell-empty">·</span>`;
+  }
+  const sub = p.subject ? `<div class="cell-subject">${p.subject}</div>` : '';
+  const second = p[secondLineKey] ? `<div class="cell-class">${p[secondLineKey]}</div>` : '';
+  return `${sub}${second}`;
+}
+
+function buildWeekGrid(getPeriod, secondLineKey, enableSwap, teacherName, highlightMap, suppressTodayNow){
+  highlightMap = highlightMap || {};
+  const cells = [];
+
+  cells.push(`<div class="gt-corner">시간 / 요일</div>`);
+  DAYS.forEach(day=>{
+    const isToday = !suppressTodayNow && day===todayDay;
+    cells.push(`<div class="gt-head" data-day="${day}">${day}${isToday?'<span class="today-tag">오늘</span>':''}</div>`);
+  });
+
+  PERIODS.forEach(p=>{
+    if(p===5){
+      cells.push(`<div class="gt-lunch-label">점심시간</div>`);
+      DAYS.forEach(day=>{
+        const isTodayLunch = !suppressTodayNow && day===todayDay;
+        const cls = ['gt-lunch-cell', isTodayLunch?'today':'', (isTodayLunch && currentPeriod==='lunch')?'now':''].filter(Boolean).join(' ');
+        cells.push(`<div class="${cls}"></div>`);
+      });
+    }
+    cells.push(`<div class="gt-pnum">${p}</div>`);
+    DAYS.forEach(day=>{
+      const found = getPeriod(day,p);
+      const isToday = !suppressTodayNow && day===todayDay;
+      const isNow = isToday && currentPeriod===p;
+      const hasContent = found && (found.subject || found[secondLineKey]);
+      const locked = enableSwap && hasContent && teacherName && isLocked(teacherName, day, p);
+      const noSwapSubject = found && isNoSwapSubject(found.subject, found.class, day, p);
+      const swappable = enableSwap && hasContent;
+      const hlType = highlightMap[`${day}-${p}`];
+      const cls = ['gt-cell', isToday?'today':'', isNow?'now':'', swappable?'swappable':'', locked?'locked':'', hlType?'preview-'+hlType:''].filter(Boolean).join(' ');
+      let badge = '';
+      if(hlType==='in') badge = `<div class="prev-in-badge">🟢 신규</div>`;
+      else if(hlType==='origin') badge = `<div class="origin-badge">선택됨</div>`;
+      else if(isNow) badge = `<div class="now-badge">● 지금</div>`;
+      else if(locked) badge = `<div class="lock-badge">🔒 묶음</div>`;
+      const attrs = ` data-day="${day}" data-period="${p}"`;
+      const inner = hlType==='out' ? `<span class="prev-out-label">비워짐</span>` : cellInner(found, secondLineKey);
+      cells.push(`<div class="${cls}"${attrs}>${inner}${badge}</div>`);
+    });
+  });
+
+  return `<div class="table-wrap"><div class="grid-table">${cells.join('')}</div></div>`;
+}
+
+function renderTeacher(t){
+  currentTeacherObj = t;
+  const getPeriod = (day,p)=> (t.schedule[day]||[]).find(x=>x.period===p);
+  card.innerHTML = `
+    <div class="info-row">
+      <span class="info-name">${t.name} 선생님</span>
+      ${EXT_MAP[t.name]?`<span class="chip ext-chip">☎ ${EXT_MAP[t.name]}</span>`:''}
+      ${t.homeroom?`<span class="chip accent">${t.homeroom} 담임</span>`:''}
+      ${t.remarks?`<span class="chip">${t.remarks}</span>`:''}
+      <button class="print-btn" id="printBtn" title="인쇄">🖨 인쇄</button>
+    </div>
+    ${buildWeekGrid(getPeriod, 'class', true, t.name)}
+    <div class="swap-hint">수업 칸을 클릭하면 교체·보강 가능한 시간을 찾아드려요 (🔒 묶음 선택과목·자율/동아리는 교체만 제한되고 보강은 가능해요)</div>
+  `;
+  document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+  saveLastView();
+}
+
+function renderClass(cls){
+  currentTeacherObj = null;
+  const sched = classSchedule[cls] || {};
+  const getPeriod = (day,p)=> (sched[day]||[]).find(x=>x.period===p);
+  card.innerHTML = `
+    <div class="info-row">
+      <span class="info-name">${cls}</span>
+      ${classHomeroom[cls] ? `<span class="chip accent">${classHomeroom[cls]} 담임</span>` : ''}
+      <button class="print-btn" id="printBtn" title="인쇄">🖨 인쇄</button>
+    </div>
+    ${buildWeekGrid(getPeriod, 'teacher', false, null)}
+  `;
+  document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+  saveLastView();
+}
+
+// ---- 마지막으로 보던 화면 기억하기 (localStorage) ----
+const LAST_VIEW_KEY = 'yeungnam_timetable_last_view';
+function saveLastView(){
+  try{
+    localStorage.setItem(LAST_VIEW_KEY, JSON.stringify({mode, key:selectedKey}));
+  }catch(e){}
+}
+function restoreLastView(){
+  try{
+    const raw = localStorage.getItem(LAST_VIEW_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    if(data.mode==='teacher'){
+      const t = TEACHERS.find(x=>x.name===data.key);
+      if(!t) return false;
+      mode = 'teacher';
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='teacher'));
+      teacherSearchBox.style.display = '';
+      classSelectBox.style.display = 'none';
+      sidebarTitle.textContent = `교사 목록 (${TEACHERS.length})`;
+      select(t);
+      return true;
+    }
+    if(data.mode==='class'){
+      if(!classSchedule[data.key]) return false;
+      mode = 'class';
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='class'));
+      teacherSearchBox.style.display = 'none';
+      classSelectBox.style.display = '';
+      sidebarTitle.textContent = `학급 목록 (${classList.length})`;
+      select(data.key);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+// ---- 클립보드 복사 (실패 시 구형 방식으로 대체) ----
+function copyToClipboard(text, btn){
+  const onSuccess = ()=>{
+    if(btn){
+      const orig = btn.textContent;
+      btn.textContent = '✓ 복사됨';
+      setTimeout(()=>{ btn.textContent = orig; }, 1500);
+    }
+  };
+  const fallback = ()=>{
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      onSuccess();
+    }catch(e){
+      prompt('아래 문구를 복사하세요:', text);
+    }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+// 복사 버튼 + (지원되는 기기라면) 공유 버튼을 같이 연결
+function wireRequestButtons(copyBtnId, shareBtnId, getMsg){
+  const copyBtn = document.getElementById(copyBtnId);
+  if(copyBtn) copyBtn.addEventListener('click', (e)=> copyToClipboard(getMsg(), e.target));
+
+  const shareBtn = document.getElementById(shareBtnId);
+  if(shareBtn && navigator.share){
+    shareBtn.style.display = '';
+    shareBtn.addEventListener('click', ()=>{
+      navigator.share({text: getMsg()}).catch(()=>{});
+    });
+  }
+}
+
+// ---- 수업교체 가능 시간 찾기 ----
+// 같은 반(cls)에 들어가는 다른 선생님 중, 두 사람의 시간이 서로 비어 있는 경우만 후보로 반환
+function findSwapCandidates(teacherObj, day, period, cls){
+  const candidates = [];
+  const classDays = classSchedule[cls] || {};
+  Object.keys(classDays).forEach(day2=>{
+    classDays[day2].forEach(entry=>{
+      if(entry.teacher === teacherObj.name) return;
+      if(day2===day && entry.period===period) return;
+      if(isLocked(entry.teacher, day2, entry.period)) return;
+      if(isNoSwapSubject(entry.subject, cls, day2, entry.period)) return;
+      const candidate = TEACHERS.find(x=>x.name===entry.teacher);
+      if(!candidate) return;
+      const candidateBusyAtMySlot = (candidate.schedule[day]||[]).some(x=>x.period===period);
+      if(candidateBusyAtMySlot) return;
+      const meBusyAtCandidateSlot = (teacherObj.schedule[day2]||[]).some(x=>x.period===entry.period);
+      if(meBusyAtCandidateSlot) return;
+      candidates.push({teacher:entry.teacher, day:day2, period:entry.period, subject:entry.subject});
+    });
+  });
+  candidates.sort((a,b)=> DAYS.indexOf(a.day)-DAYS.indexOf(b.day) || a.period-b.period);
+  return candidates;
+}
+
+function findCoverCandidates(teacherObj, day, period){
+  const mySubject = TEACHER_TO_SUBJECT[teacherObj.name] || null;
+  const myDept = getDept(teacherObj.name);
+  const list = TEACHERS
+    .filter(t=>t.name !== teacherObj.name)
+    .filter(t=> !(t.schedule[day]||[]).some(x=>x.period===period))
+    .map(t=>({
+      teacher: t.name,
+      subject: TEACHER_TO_SUBJECT[t.name] || null,
+      dept: getDept(t.name),
+      sameDept: !!(myDept && getDept(t.name)===myDept)
+    }));
+  list.sort((a,b)=>{
+    if(a.sameDept !== b.sameDept) return a.sameDept ? -1 : 1;
+    if(a.sameDept && mySubject){
+      const aSameSubj = a.subject===mySubject, bSameSubj = b.subject===mySubject;
+      if(aSameSubj !== bSameSubj) return aSameSubj ? -1 : 1;
+    }
+    return a.teacher.localeCompare(b.teacher,'ko');
+  });
+  return list;
+}
+
+const swapModal = document.getElementById('swapModal');
+const swapModalBody = document.getElementById('swapModalBody');
+
+// 팝업 내용이 바뀔 때 부드럽게 페이드 전환 (크기 변화도 같이 자연스럽게 보이도록)
+function setModalContent(html, afterRender, sizeClass){
+  const box = swapModal.querySelector('.modal-box');
+  const wasOpen = swapModal.classList.contains('open');
+  const wasWide = swapModal.classList.contains('wide');
+  const willBeWide = sizeClass === 'wide';
+  const sizeChanging = wasOpen && (wasWide !== willBeWide);
+
+  // 클래스를 바꾸기 전에 현재 화면 그대로의 픽셀 크기로 고정해서,
+  // max-width 클래스 전환으로 인한 즉발적인 스냅(튕김)을 막음
+  let startW = 0, startH = 0;
+  if(sizeChanging && box){
+    const r = box.getBoundingClientRect();
+    startW = r.width; startH = r.height;
+    box.style.transition = 'none';
+    box.style.width = startW + 'px';
+    box.style.height = startH + 'px';
+  }
+
+  swapModal.classList.remove('wide','medium');
+  swapModal.classList.add(sizeClass || 'medium');
+
+  // 크기 분류(medium/wide)가 그대로면 애니메이션 없이 내용만 바로 교체
+  if(!sizeChanging){
+    swapModalBody.style.transition = 'none';
+    swapModalBody.innerHTML = html;
+    if(typeof afterRender === 'function') afterRender();
+    swapModalBody.style.opacity = '1';
+    return;
+  }
+
+  const fadeContentIn = ()=>{
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        swapModalBody.style.transition = 'opacity 0.16s ease';
+        swapModalBody.style.opacity = '1';
+      });
+    });
+  };
+
+  const applyAndShow = ()=>{
+    swapModalBody.innerHTML = html;
+    if(typeof afterRender === 'function') afterRender();
+
+    // 새 내용 + 새 클래스 기준의 자연 크기를 측정
+    box.style.transition = 'none';
+    box.style.width = 'auto';
+    box.style.height = 'auto';
+    const endR = box.getBoundingClientRect();
+    // 고정해뒀던 이전 크기로 다시 되돌림 (내용은 아직 투명한 상태)
+    box.style.width = startW + 'px';
+    box.style.height = startH + 'px';
+    void box.offsetWidth; // 강제 리플로우
+    requestAnimationFrame(()=>{
+      box.style.transition = 'width 0.24s ease, height 0.24s ease';
+      box.style.width = endR.width + 'px';
+      box.style.height = endR.height + 'px';
+    });
+    setTimeout(()=>{
+      box.style.width = '';
+      box.style.height = '';
+      box.style.transition = '';
+    }, 250);
+    // 크기 변화가 거의 끝난 다음에 내용을 페이드인 (내용 비율 왜곡 없이)
+    setTimeout(fadeContentIn, 230);
+  };
+
+  swapModalBody.style.transition = 'opacity 0.1s ease';
+  swapModalBody.style.opacity = '0';
+  setTimeout(applyAndShow, 100);
+}
+
+function cloneScheduleWithSwap(schedule, removeDay, removePeriod, addDay, addPeriod, subject, cls){
+  const copy = {};
+  DAYS.forEach(d=>{
+    copy[d] = (schedule[d]||[])
+      .filter(x=> !(d===removeDay && x.period===removePeriod))
+      .map(x=>({...x}));
+  });
+  copy[addDay] = (copy[addDay]||[]).filter(x=>x.period!==addPeriod);
+  copy[addDay].push({period:addPeriod, subject, class:cls});
+  return copy;
+}
+
+function cloneScheduleWithAdd(schedule, addDay, addPeriod, subject, cls){
+  const copy = {};
+  DAYS.forEach(d=>{ copy[d] = (schedule[d]||[]).map(x=>({...x})); });
+  copy[addDay] = (copy[addDay]||[]).filter(x=>x.period!==addPeriod);
+  copy[addDay].push({period:addPeriod, subject, class:cls});
+  return copy;
+}
+
+let swapContextTeacher = null;
+let popupTab = 'swap'; // 'swap' | 'cover'
+
+function renderPopup(teacherObj, day, period, entry){
+  swapContextTeacher = teacherObj;
+  const getPeriodOrigin = (d,p)=> (teacherObj.schedule[d]||[]).find(x=>x.period===p);
+  const hlOrigin = {}; hlOrigin[`${day}-${period}`] = 'origin';
+  const gridHtml = buildWeekGrid(getPeriodOrigin, 'class', true, teacherObj.name, hlOrigin, true);
+
+  let listHtml, candidates = [];
+  const originLocked = isLocked(teacherObj.name, day, period);
+  const originNoSwap = isNoSwapSubject(entry.subject, entry.class, day, period);
+
+  if(popupTab==='swap'){
+    if(originLocked || originNoSwap){
+      candidates = [];
+      listHtml = `<div class="swap-empty">이 시간은 ${originLocked ? '묶음 선택과목이라' : '교체 대상이 아니라'} 교체할 수 없습니다. 위 "보강" 탭을 이용해보세요.</div>`;
+    } else {
+      candidates = findSwapCandidates(teacherObj, day, period, entry.class);
+      listHtml = candidates.length
+        ? candidates.map((c,i)=>`
+            <div class="swap-cand" data-idx="${i}">
+              <div class="swap-cand-name">${c.teacher} 선생님</div>
+              <div class="swap-cand-sub">${c.day} ${c.period}교시 (${c.subject||''}) ↔ ${day} ${period}교시로 교체</div>
+              <div class="swap-cand-arrow">교체 후 미리보기 →</div>
+            </div>`).join('')
+        : `<div class="swap-empty">조건에 맞는 교체 가능한 선생님이 없습니다.</div>`;
+    }
+  } else {
+    const coverList = findCoverCandidates(teacherObj, day, period);
+    const sameGroup = coverList.filter(c=>c.sameDept);
+    const otherGroup = coverList.filter(c=>!c.sameDept);
+    const rowHtml = c => `
+        <div class="swap-cand cover-cand" data-cover-teacher="${c.teacher}">
+          <div class="swap-cand-name">${c.teacher} 선생님${EXT_MAP[c.teacher]?` <span class="preview-ext">☎ ${EXT_MAP[c.teacher]}</span>`:''}</div>
+          <div class="swap-cand-sub">${day} ${period}교시 보강 가능</div>
+          <div class="swap-cand-arrow">보강 후 미리보기 →</div>
+        </div>`;
+    listHtml = coverList.length
+      ? sameGroup.map(rowHtml).join('') + (sameGroup.length && otherGroup.length ? `<div class="dept-divider"></div>` : '') + otherGroup.map(rowHtml).join('')
+      : `<div class="swap-empty">보강 가능한 선생님이 없습니다.</div>`;
+  }
+
+  const html = `
+    <div class="popup-tabs">
+      <button class="popup-tab-btn ${popupTab==='swap'?'active':''}" data-tab="swap">교체</button>
+      <button class="popup-tab-btn ${popupTab==='cover'?'active':''}" data-tab="cover">보강</button>
+    </div>
+    <div class="modal-title">${day} ${period}교시 · ${entry.subject||''} (${entry.class||''})</div>
+    <div class="modal-sub">${popupTab==='swap'
+      ? `${teacherObj.name} 선생님의 이 시간, 같은 반에 들어가는 다른 선생님과 교체할 수 있는 경우 (다른 칸을 클릭하면 그 시간 기준으로 다시 찾아드려요)`
+      : `${teacherObj.name} 선생님의 이 시간, 이때 비어 있어 보강 가능한 선생님 (동교과 우선)`}</div>
+    <div class="swap-preview-grids">
+      <div class="preview-col swap-col-list">
+        <div class="swap-list">${listHtml}</div>
+        <div class="swap-note">${popupTab==='swap'
+          ? '※ 두 선생님의 다른 시간이 서로 비어 있는 경우만 표시됩니다. 후보를 누르면 교체 후 시간표를 미리 볼 수 있어요. 실제 교체는 학교 협의 절차를 따로 거쳐야 해요.'
+          : '※ 이 시간에 다른 수업이 없는 선생님 목록입니다. 실제 보강 요청은 학교 협의 절차를 따로 거쳐야 해요.'}</div>
+      </div>
+      <div class="preview-col">
+        <div class="preview-col-title">${teacherObj.name} 선생님 시간표${EXT_MAP[teacherObj.name]?` <span class="preview-ext">☎ ${EXT_MAP[teacherObj.name]}</span>`:''}</div>
+        ${gridHtml}
+      </div>
+    </div>
+  `;
+
+  setModalContent(html, ()=>{
+    swapModalBody.querySelectorAll('.popup-tab-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if(popupTab===btn.dataset.tab) return;
+        popupTab = btn.dataset.tab;
+        renderPopup(teacherObj, day, period, entry);
+      });
+    });
+
+    if(popupTab==='swap'){
+      swapModalBody.querySelectorAll('.swap-cand').forEach((el,i)=>{
+        const c = candidates[i];
+        el.addEventListener('click', ()=> renderSwapPreview(teacherObj, day, period, entry, c));
+        el.addEventListener('mouseenter', ()=>{
+          const cell = swapModalBody.querySelector(`.gt-cell[data-day="${c.day}"][data-period="${c.period}"]`);
+          if(cell) cell.classList.add('cell-blink');
+        });
+        el.addEventListener('mouseleave', ()=>{
+          const cell = swapModalBody.querySelector(`.gt-cell[data-day="${c.day}"][data-period="${c.period}"]`);
+          if(cell) cell.classList.remove('cell-blink');
+        });
+      });
+    } else {
+      swapModalBody.querySelectorAll('.cover-cand').forEach(el=>{
+        el.addEventListener('click', ()=> renderCoverPreview(teacherObj, day, period, entry, el.dataset.coverTeacher));
+      });
+    }
+  }, 'medium');
+}
+
+function renderCoverPreview(teacherObj, day, period, entry, candName){
+  const candObj = TEACHERS.find(x=>x.name===candName);
+  const after = cloneScheduleWithAdd(candObj.schedule, day, period, entry.subject, entry.class);
+  const hl = {}; hl[`${day}-${period}`] = 'in';
+  const getPeriodC = (d,p)=> (after[d]||[]).find(x=>x.period===p);
+
+  const html = `
+    <button class="swap-back" id="coverBackBtn">← 목록으로</button>
+    <div class="modal-title">보강 후 미리보기</div>
+    <div class="modal-sub">${candName} 선생님이 ${day} ${period}교시 ${entry.class||''} 수업을 보강하면 시간표가 이렇게 됩니다</div>
+    <div class="swap-preview-grids">
+      <div class="preview-col preview-col-single">
+        <div class="preview-col-title">${candName} 선생님 (보강 후)${EXT_MAP[candName]?` <span class="preview-ext">☎ ${EXT_MAP[candName]}</span>`:''}</div>
+        ${buildWeekGrid(getPeriodC, 'class', false, null, hl, true)}
+      </div>
+    </div>
+    <button class="copy-req-btn" id="copyCoverReqBtn">요청 문구 복사 📋</button>
+    <button class="copy-req-btn" id="shareCoverReqBtn" style="display:none;">공유하기 📤</button>
+    <div class="swap-note">🟢 신규 = 이번에 새로 보강을 맡게 되는 칸입니다. 그 날 다른 수업들과 겹치거나 너무 몰리지 않는지 확인해보세요. 실제 보강 요청은 학교 협의 절차를 따로 거쳐야 해요.</div>
+  `;
+  setModalContent(html, ()=>{
+    document.getElementById('coverBackBtn').addEventListener('click', ()=> renderPopup(teacherObj, day, period, entry));
+    const buildMsg = ()=> `안녕하세요, 선생님. ${teacherObj.name}입니다.\n\n${day} ${period}교시(${entry.class||''}) 수업 보강 가능하실까요?\n\n가능하시면 말씀해 주시면 감사하겠습니다.`;
+    wireRequestButtons('copyCoverReqBtn', 'shareCoverReqBtn', buildMsg);
+  }, 'medium');
+}
+
+// 팝업 안의 시간표에서 다른 칸을 클릭하면 그 시간 기준으로 목록을 다시 보여줌
+swapModalBody.addEventListener('click', e=>{
+  const cell = e.target.closest('.gt-cell.swappable');
+  if(!cell || !swapContextTeacher) return;
+  const day2 = cell.dataset.day;
+  const period2 = parseInt(cell.dataset.period, 10);
+  const entry2 = (swapContextTeacher.schedule[day2]||[]).find(x=>x.period===period2);
+  if(!entry2 || !entry2.class) return;
+  renderPopup(swapContextTeacher, day2, period2, entry2);
+});
+
+function renderSwapPreview(teacherObj, day, period, entry, cand){
+  const candObj = TEACHERS.find(x=>x.name===cand.teacher);
+  const afterA = cloneScheduleWithSwap(teacherObj.schedule, day, period, cand.day, cand.period, entry.subject, entry.class);
+  const afterB = cloneScheduleWithSwap(candObj.schedule, cand.day, cand.period, day, period, cand.subject, entry.class);
+
+  const hlA = {}; hlA[`${day}-${period}`]='out'; hlA[`${cand.day}-${cand.period}`]='in';
+  const hlB = {}; hlB[`${cand.day}-${cand.period}`]='out'; hlB[`${day}-${period}`]='in';
+
+  const getPeriodA = (d,p)=> (afterA[d]||[]).find(x=>x.period===p);
+  const getPeriodB = (d,p)=> (afterB[d]||[]).find(x=>x.period===p);
+
+  const html = `
+    <button class="swap-back" id="swapBackBtn">← 목록으로</button>
+    <div class="modal-title">교체 미리보기</div>
+    <div class="modal-sub">${teacherObj.name} 선생님의 ${day} ${period}교시 ↔ ${cand.teacher} 선생님의 ${cand.day} ${cand.period}교시</div>
+    <div class="swap-preview-grids">
+      <div class="preview-col">
+        <div class="preview-col-title">${teacherObj.name} 선생님 (교체 후)${EXT_MAP[teacherObj.name]?` <span class="preview-ext">☎ ${EXT_MAP[teacherObj.name]}</span>`:''}</div>
+        ${buildWeekGrid(getPeriodA, 'class', false, null, hlA, true)}
+      </div>
+      <div class="preview-col">
+        <div class="preview-col-title">${cand.teacher} 선생님 (교체 후)${EXT_MAP[cand.teacher]?` <span class="preview-ext">☎ ${EXT_MAP[cand.teacher]}</span>`:''}</div>
+        ${buildWeekGrid(getPeriodB, 'class', false, null, hlB, true)}
+      </div>
+    </div>
+    <button class="copy-req-btn" id="copySwapReqBtn">요청 문구 복사 📋</button>
+    <button class="copy-req-btn" id="shareSwapReqBtn" style="display:none;">공유하기 📤</button>
+    <div class="swap-note">🟡 비워짐 = 원래 있던 수업이 빠지는 칸 · 🟢 신규 = 교체로 새로 들어오는 칸. 실제 교체는 학교 협의 절차를 따로 거쳐야 해요.</div>
+  `;
+  setModalContent(html, ()=>{
+    document.getElementById('swapBackBtn').addEventListener('click', ()=> renderPopup(teacherObj, day, period, entry));
+    const buildMsg = ()=> `안녕하세요, 선생님. ${teacherObj.name}입니다.\n\n${day} ${period}교시(${entry.class||''}) ↔ ${cand.day} ${cand.period}교시(${entry.class||''}) 수업 교체 가능하실까요?\n\n가능하시면 말씀해 주시면 감사하겠습니다.`;
+    wireRequestButtons('copySwapReqBtn', 'shareSwapReqBtn', buildMsg);
+  }, 'wide');
+}
+
+function openSwapModal(teacherObj, day, period, entry){
+  popupTab = 'swap';
+  renderPopup(teacherObj, day, period, entry);
+  swapModal.classList.add('open');
+}
+
+function closeSwapModal(){ swapModal.classList.remove('open'); swapModal.classList.remove('wide'); swapModal.classList.remove('medium'); }
+
+document.getElementById('swapModalClose').addEventListener('click', closeSwapModal);
+swapModal.addEventListener('click', e=>{ if(e.target===swapModal) closeSwapModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeSwapModal(); });
+
+card.addEventListener('click', e=>{
+  const cell = e.target.closest('.gt-cell.swappable');
+  if(!cell || !currentTeacherObj) return;
+  const day = cell.dataset.day;
+  const period = parseInt(cell.dataset.period, 10);
+  const entry = (currentTeacherObj.schedule[day]||[]).find(x=>x.period===period);
+  if(!entry || !entry.class) return;
+  openSwapModal(currentTeacherObj, day, period, entry);
+});
+
+// 데스크톱 앱(Electron)으로 실행 중일 때만 창 크기 전환 버튼을 보여줌
+if (window.electronAPI) {
+  const winsizeGroup = document.getElementById('winsizeGroup');
+  winsizeGroup.style.display = 'flex';
+  winsizeGroup.querySelectorAll('.winsize-btn').forEach(btn=>{
+    btn.addEventListener('click', () => window.electronAPI.setWindowSize(btn.dataset.size));
+  });
+}
+
+renderSubjectSelectors();
+refreshLists();
+restoreLastView();
+
+// PWA: http/https로 서빙될 때만 서비스워커 등록 (file://, Electron 환경에서는 그냥 건너뜀)
+if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ---- 구글시트 연동: 내선번호 / 시정표 / 묶음선택과목을 실시간으로 확인 ----
+// 인터넷이 안 되거나 시트를 못 읽어와도 위에 있는 기본값을 그대로 쓰니, 오프라인 동작은 깨지지 않음.
+const SHEET_ID = '1k4y_mhU7Dcc_Eu0CvBX_wMSEzJ6cyyf5EjvbRK7jBW4';
+function sheetUrl(tabName){
+  return `https://opensheet.elk.sh/${SHEET_ID}/${encodeURIComponent(tabName)}`;
+}
+function fetchWithTimeout(url, ms){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), ms);
+  return fetch(url, {signal: ctrl.signal}).finally(()=>clearTimeout(timer));
+}
+
+async function loadLiveConfig(){
+  // 1) 내선번호
+  try{
+    const rows = await (await fetchWithTimeout(sheetUrl('내선번호'), 6000)).json();
+    if(Array.isArray(rows) && rows.length > 10){
+      const fresh = {};
+      rows.forEach(r=>{ if(r['이름'] && r['내선번호']) fresh[r['이름'].trim()] = String(r['내선번호']).trim(); });
+      if(Object.keys(fresh).length > 10){
+        Object.keys(EXT_MAP).forEach(k=>delete EXT_MAP[k]);
+        Object.assign(EXT_MAP, fresh);
+      }
+    }
+  }catch(e){}
+
+  // 2) 시정표
+  let bellChanged = false;
+  try{
+    const rows = await (await fetchWithTimeout(sheetUrl('시정표'), 6000)).json();
+    if(Array.isArray(rows) && rows.length >= 7){
+      const fresh = rows.map(r=>{
+        const pRaw = String(r['교시']).trim();
+        const period = pRaw==='lunch' ? 'lunch' : parseInt(pRaw, 10);
+        return {period, start:String(r['시작']).trim(), end:String(r['종료']).trim()};
+      }).filter(b=> b.start && b.end && (b.period==='lunch' || !isNaN(b.period)));
+      if(fresh.length >= 7){
+        BELL_SCHEDULE.length = 0;
+        BELL_SCHEDULE.push(...fresh);
+        bellChanged = true;
+      }
+    }
+  }catch(e){}
+
+  // 3) 묶음선택과목
+  try{
+    const rows = await (await fetchWithTimeout(sheetUrl('묶음선택과목'), 6000)).json();
+    if(Array.isArray(rows) && rows.length > 0){
+      const fresh = new Set();
+      rows.forEach(r=>{
+        const t = r['교사'], d = r['요일'], p = parseInt(r['교시'], 10);
+        if(t && d && !isNaN(p)) fresh.add(`${t.trim()}|${d.trim()}|${p}`);
+      });
+      if(fresh.size > 0){
+        ELECTIVE_LOCK_SET.clear();
+        fresh.forEach(v=>ELECTIVE_LOCK_SET.add(v));
+      }
+    }
+  }catch(e){}
+
+  // 4) 전체시간표 (선생님별 요일/교시 칸이 '과목/반' 형태로 들어있는 가로형 시트)
+  let teachersChanged = false;
+  try{
+    const rows = await (await fetchWithTimeout(sheetUrl('전체시간표'), 8000)).json();
+    if(Array.isArray(rows) && rows.length >= TEACHERS.length - 10){
+      const fresh = rows.map((r, idx)=>{
+        const name = (r['교사']||'').trim();
+        if(!name) return null;
+        const schedule = {};
+        DAYS.forEach(d=>{
+          const list = [];
+          PERIODS.forEach(p=>{
+            const cell = (r[`${d}${p}`]||'').trim();
+            if(!cell) return;
+            const slashIdx = cell.indexOf('/');
+            if(slashIdx===-1){
+              list.push({period:p, subject:cell, class:null});
+            } else {
+              list.push({period:p, subject:cell.slice(0,slashIdx), class:cell.slice(slashIdx+1)});
+            }
+          });
+          schedule[d] = list;
+        });
+        return {
+          no: String(idx+1),
+          name,
+          schedule,
+          total_hours: (r['시수']||'').trim() || null,
+          homeroom: (r['담임']||'').trim() || null,
+          remarks: (r['비고']||'').trim() || null
+        };
+      }).filter(Boolean);
+
+      if(fresh.length >= TEACHERS.length - 10){
+        TEACHERS.length = 0;
+        TEACHERS.push(...fresh);
+        teachersChanged = true;
+      }
+    }
+  }catch(e){}
+
+  if(bellChanged) rebuildBoundaryMinutes();
+  if(teachersChanged){ rebuildFromTeachers(); refreshGradeDropdown(); }
+  refreshCurrentView();
+}
+loadLiveConfig();
+
+</script>
+</body>
+</html>
