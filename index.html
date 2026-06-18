@@ -449,6 +449,17 @@
     .masthead, .card{padding-left:16px;padding-right:16px;}
     .info-name{font-size:18px;}
   }
+  .exit-toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:rgba(20,24,18,0.9);color:#fff;
+    font-family:'Noto Sans KR';font-size:13.5px;font-weight:600;
+    padding:11px 20px;border-radius:24px;
+    opacity:0;pointer-events:none;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+    z-index:300;
+  }
+  .exit-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
   @media print{
     body{background:#fff !important;padding:0;}
     .masthead::before, .masthead::after{display:none;}
@@ -1549,6 +1560,22 @@ function renderSwapPreview(teacherObj, day, period, entry, cand){
 // ---- 모바일 뒤로가기(하드웨어/제스처) 버튼이 팝업을 자연스럽게 닫거나 이전 화면으로 가도록 ----
 let modalDepth = 0; // 0=닫힘, 1=목록(교체/보강), 2=미리보기
 let lastListArgs = null;
+let lastBackPressTime = 0;
+const EXIT_WINDOW_MS = 2000;
+
+function showExitToast(){
+  let toast = document.getElementById('exitToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'exitToast';
+    toast.className = 'exit-toast';
+    toast.textContent = '한 번 더 누르면 종료됩니다';
+    document.body.appendChild(toast);
+  }
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(()=> toast.classList.remove('show'), 1800);
+}
 
 // 모달이 닫혀있을 때 뒤로가기를 누르면 바로 앱이 꺼지지 않도록, 기준점을 하나 심어둠
 history.pushState({root:true}, '');
@@ -1583,9 +1610,13 @@ window.addEventListener('popstate', (e)=>{
   }
   // 모달이 닫혀있는데 더 뒤로 가려는 경우 = 우리가 심어둔 기준점을 막 지난 상태 → 종료 확인
   if(modalDepth === 0 && !(e.state && e.state.root)){
-    const wantsExit = confirm('앱을 종료하시겠습니까?');
-    if(!wantsExit){
-      history.pushState({root:true}, ''); // 종료를 취소하면 기준점을 다시 심어둠
+    const now = Date.now();
+    if(now - lastBackPressTime < EXIT_WINDOW_MS){
+      // 짧은 시간 안에 두 번째로 눌렀으면 그대로 종료되게 둠 (기준점을 다시 안 심음)
+    } else {
+      lastBackPressTime = now;
+      showExitToast();
+      history.pushState({root:true}, ''); // 기준점을 다시 심어서 이번엔 종료를 막음
     }
   }
 });
