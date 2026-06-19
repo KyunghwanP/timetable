@@ -480,6 +480,17 @@
   }
 
   /* ---------- 세로 공간이 부족해지면: 제목/학교명/구분선을 숨기고 검색창 위주로 남김 ---------- */
+  .exit-toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:rgba(20,24,18,0.9);color:#fff;
+    font-family:'Noto Sans KR';font-size:13.5px;font-weight:600;
+    padding:11px 20px;border-radius:24px;
+    opacity:0;pointer-events:none;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+    z-index:300;
+  }
+  .exit-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
   @media (max-height: 760px){
     html, body{height:100%;overflow:hidden;}
     body{padding:10px 16px;}
@@ -1621,8 +1632,29 @@ function renderSwapPreview(teacherObj, day, period, entry, cand){
 // ---- 모바일 뒤로가기(하드웨어/제스처) 버튼이 팝업을 자연스럽게 닫거나 이전 화면으로 가도록 ----
 let modalDepth = 0; // 0=닫힘, 1=목록(교체/보강), 2=미리보기
 let lastListArgs = null;
+let exitArmTimer = null;
+
+function showExitToast(){
+  let toast = document.getElementById('exitToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'exitToast';
+    toast.className = 'exit-toast';
+    toast.textContent = '한 번 더 누르면 종료됩니다';
+    document.body.appendChild(toast);
+  }
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(()=> toast.classList.remove('show'), 1800);
+}
+
+function armExitGuard(){
+  history.pushState({root:true}, '');
+}
+armExitGuard(); // 페이지를 처음 열 때 한 번 무장
 
 function openSwapModal(teacherObj, day, period, entry){
+  clearTimeout(exitArmTimer); // 팝업을 여는 동안에는 무장 타이머가 끼어들지 않도록
   popupTab = 'swap';
   lastListArgs = {teacherObj, day, period, entry};
   renderPopup(teacherObj, day, period, entry);
@@ -1648,8 +1680,18 @@ window.addEventListener('popstate', (e)=>{
     } else if(modalDepth === 1 && lastListArgs){
       renderPopup(lastListArgs.teacherObj, lastListArgs.day, lastListArgs.period, lastListArgs.entry);
     }
+    return;
   }
-  // 팝업이 이미 닫혀있는 상태(modalDepth===0)에서 더 뒤로가면, 평소 앱들처럼 그대로 종료되도록 둠
+  // 팝업이 닫혀있는 상태(modalDepth===0)에서, 방금 무장해둔 안전장치를 막 소비한 경우
+  // (= 더 이상 안으로 갈 곳이 없는 진짜 바닥에 도달) → 토스트만 보여주고,
+  // 바로 다시 무장하지 않음. 2초 안에 또 누르면 그 즉시 안드로이드가 앱을 종료시킴.
+  if(modalDepth === 0 && !(e.state && e.state.root)){
+    showExitToast();
+    clearTimeout(exitArmTimer);
+    exitArmTimer = setTimeout(()=>{
+      if(modalDepth === 0) armExitGuard(); // 그 사이 또 안 눌렀으면 다시 무장
+    }, 2000);
+  }
 });
 
 document.getElementById('swapModalClose').addEventListener('click', ()=>{
