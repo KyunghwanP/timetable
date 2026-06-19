@@ -127,7 +127,7 @@
 
   .class-select-box{display:flex;gap:8px;flex:1;min-width:220px;}
   .class-select-box select{
-    flex:1;
+    flex:1;min-width:0;
     font-family:'Noto Sans KR';font-size:15px;font-weight:500;
     padding:10px 12px;
     border:1.5px solid var(--rule);
@@ -169,38 +169,67 @@
   .placeholder b{color:var(--ink);}
 
   .info-row{
-    display:flex;flex-wrap:wrap;gap:10px;
+    display:flex;flex-wrap:wrap;gap:var(--info-row-gap);
     align-items:baseline;
-    padding-bottom:14px;
+    padding-bottom:var(--info-row-pad-bottom);
     border-bottom:1px solid var(--rule);
-    margin-bottom:18px;
+    margin-bottom:var(--info-row-margin-bottom);
   }
   .info-name{
-    font-family:'Noto Serif KR';font-weight:900;font-size:22px;
+    font-family:'Noto Serif KR';font-weight:900;font-size:var(--info-name-font);
   }
   .chip{
-    font-family:'IBM Plex Mono';font-size:12px;font-weight:600;
+    font-family:'IBM Plex Mono';font-size:var(--chip-font);font-weight:600;
     background:var(--paper-soft);color:var(--ink-soft);
-    padding:4px 9px;border-radius:20px;
+    padding:var(--chip-pad-v) var(--chip-pad-h);border-radius:20px;
   }
   .chip.accent{color:var(--mon);}
-  .chip.ext-chip{background:rgba(47,93,98,0.12);color:var(--wed);font-size:15px;font-weight:700;padding:5px 12px;}
+  .chip.ext-chip{background:rgba(47,93,98,0.12);color:var(--wed);font-size:var(--ext-chip-font);font-weight:700;padding:var(--ext-chip-pad-v) var(--ext-chip-pad-h);}
   .print-btn{
     margin-left:auto;border:1.5px solid var(--rule);background:var(--paper-soft);
-    color:var(--ink-soft);font-family:'Noto Sans KR';font-weight:700;font-size:12.5px;
-    padding:6px 13px;border-radius:20px;cursor:pointer;
+    color:var(--ink-soft);font-family:'Noto Sans KR';font-weight:700;font-size:var(--print-btn-font);
+    padding:var(--print-btn-pad-v) var(--print-btn-pad-h);border-radius:20px;cursor:pointer;
   }
   .print-btn:hover{background:var(--rule);color:var(--ink);}
 
-  /* ---------- week grid: rounded tile system (fully fluid via container queries) ---------- */
+  /* ---------- week grid: rounded tile system (fully fluid via container queries + viewport height) ---------- */
+  :root{
+    --gt-head-h: clamp(34px, min(9cqw,5.4vh), 44px);
+    --gt-row-h: clamp(40px, min(11cqw,7vh), 58px);
+    --gt-lunch-h: clamp(20px, min(5cqw,3.2vh), 26px);
+    --gt-gap: clamp(3px, min(1.1cqw,0.7vh), 6px);
+    --gt-colnum-w: clamp(22px,9cqw,46px);
+    --gt-font-corner: clamp(9px,2.6cqw,13px);
+    --gt-font-head: clamp(10.5px, min(3.4cqw,2.2vh), 14px);
+    --gt-font-pnum: clamp(10px, min(3cqw,2vh), 13px);
+    --gt-font-lunch: clamp(8px,2.4cqw,11px);
+    --gt-font-subject: clamp(9.5px, min(3cqw,2vh), 13px);
+    --gt-font-class: clamp(7.5px, min(2.2cqw,1.5vh), 10.5px);
+    --gt-font-empty: clamp(10px,2.8cqw,14px);
+    --gt-font-badge: clamp(6.5px,1.8cqw,8.5px);
+
+    --info-name-font: clamp(14px, 2.6vh, 22px);
+    --info-row-gap: clamp(5px, 1.2vh, 10px);
+    --info-row-pad-bottom: clamp(6px, 1.6vh, 14px);
+    --info-row-margin-bottom: clamp(8px, 2vh, 18px);
+    --chip-font: clamp(9px, 1.6vh, 12px);
+    --chip-pad-v: clamp(2px, 0.45vh, 4px);
+    --chip-pad-h: clamp(6px, 1.3vh, 9px);
+    --ext-chip-font: clamp(11px, 2vh, 15px);
+    --ext-chip-pad-v: clamp(3px, 0.6vh, 5px);
+    --ext-chip-pad-h: clamp(8px, 1.6vh, 12px);
+    --print-btn-font: clamp(10px, 1.6vh, 12.5px);
+    --print-btn-pad-v: clamp(3px, 0.6vh, 6px);
+    --print-btn-pad-h: clamp(8px, 1.6vh, 13px);
+  }
   .table-wrap{
     overflow-x:auto;-webkit-overflow-scrolling:touch;padding:14px 0 4px;
     container-type:inline-size;
   }
   .grid-table{
     display:grid;
-    grid-template-columns:clamp(22px,9cqw,46px) repeat(5, minmax(0,1fr));
-    gap:clamp(3px,1.1cqw,6px);
+    grid-template-columns:var(--gt-colnum-w) repeat(5, minmax(0,1fr));
+    gap:var(--gt-gap);
     width:100%;
   }
 
@@ -210,15 +239,15 @@
     border-radius:8px;
     display:flex;align-items:center;
     padding:4px clamp(2px,2cqw,10px);
-    font-family:'Noto Serif KR';font-weight:700;font-size:clamp(9px,2.6cqw,13px);color:var(--ink);
+    font-family:'Noto Serif KR';font-weight:700;font-size:var(--gt-font-corner);color:var(--ink);
     line-height:1.2;white-space:normal;word-break:keep-all;
-    min-height:clamp(34px,9cqw,44px);
+    min-height:var(--gt-head-h);
   }
   .gt-head{
     border-radius:8px;
-    color:#fff;font-family:'Noto Serif KR';font-weight:700;font-size:clamp(10.5px,3.4cqw,14px);
+    color:#fff;font-family:'Noto Serif KR';font-weight:700;font-size:var(--gt-font-head);
     display:flex;align-items:center;justify-content:center;
-    min-height:clamp(34px,9cqw,44px);position:relative;
+    min-height:var(--gt-head-h);position:relative;
   }
   .gt-head[data-day="월"]{background:var(--mon);}
   .gt-head[data-day="화"]{background:var(--tue);}
@@ -240,19 +269,19 @@
   .gt-pnum{
     background:var(--paper-soft);border-radius:8px;
     display:flex;align-items:center;justify-content:center;
-    font-family:'IBM Plex Mono';font-weight:700;font-size:clamp(10px,3cqw,13px);color:var(--ink-soft);
-    min-height:clamp(40px,11cqw,58px);
+    font-family:'IBM Plex Mono';font-weight:700;font-size:var(--gt-font-pnum);color:var(--ink-soft);
+    min-height:var(--gt-row-h);
   }
   .gt-lunch-label{
     background:var(--paper-soft);border-radius:8px;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Noto Sans KR';font-style:italic;font-weight:600;font-size:clamp(8px,2.4cqw,11px);color:var(--ink-soft);
-    min-height:clamp(20px,5cqw,26px);
+    font-family:'Noto Sans KR';font-style:italic;font-weight:600;font-size:var(--gt-font-lunch);color:var(--ink-soft);
+    min-height:var(--gt-lunch-h);
   }
 
   .gt-cell{
     background:#fff;border-radius:8px;
-    min-height:clamp(40px,11cqw,58px);
+    min-height:var(--gt-row-h);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:4px 2px;text-align:center;
     border:1.5px solid transparent;
@@ -263,15 +292,15 @@
     border-color:#E8A93A;
     box-shadow:0 0 0 3px rgba(232,169,58,0.18);
   }
-  .gt-lunch-cell{background:#fff;border-radius:8px;min-height:clamp(20px,5cqw,26px);}
+  .gt-lunch-cell{background:#fff;border-radius:8px;min-height:var(--gt-lunch-h);}
   .gt-lunch-cell.today{background:var(--today-tint);}
   .gt-lunch-cell.now{background:#FFF8E3;border:1.5px solid #E8A93A;}
 
-  .cell-subject{font-size:clamp(9.5px,3cqw,13px);font-weight:700;line-height:1.25;word-break:keep-all;color:var(--ink);}
-  .cell-class{font-family:'IBM Plex Mono';font-size:clamp(7.5px,2.2cqw,10.5px);color:var(--ink-soft);margin-top:2px;}
-  .cell-empty{color:#cfc9b8;font-size:clamp(10px,2.8cqw,14px);}
+  .cell-subject{font-size:var(--gt-font-subject);font-weight:700;line-height:1.25;word-break:keep-all;color:var(--ink);}
+  .cell-class{font-family:'IBM Plex Mono';font-size:var(--gt-font-class);color:var(--ink-soft);margin-top:2px;}
+  .cell-empty{color:#cfc9b8;font-size:var(--gt-font-empty);}
   .now-badge{
-    font-size:clamp(6.5px,1.8cqw,8.5px);color:#92611a;font-weight:700;
+    font-size:var(--gt-font-badge);color:#92611a;font-weight:700;
     margin-top:3px;letter-spacing:0.04em;
   }
 
@@ -279,7 +308,7 @@
   .gt-cell.swappable:hover{box-shadow:0 0 0 2px var(--mon) inset;}
   .gt-cell.locked{background:#F1EFE8;border:1.5px dashed var(--rule);cursor:default;}
   .lock-badge{
-    font-size:clamp(6.5px,1.8cqw,8.5px);color:var(--ink-soft);font-weight:700;
+    font-size:var(--gt-font-badge);color:var(--ink-soft);font-weight:700;
     margin-top:3px;letter-spacing:0.02em;
   }
   .swap-hint{
@@ -447,7 +476,7 @@
   /* ---------- phone: tighter page padding ---------- */
   @media (max-width:699px){
     .masthead, .card{padding-left:16px;padding-right:16px;}
-    .info-name{font-size:18px;}
+    .info-name{font-size:min(var(--info-name-font), 18px);}
   }
   .exit-toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
@@ -459,6 +488,36 @@
     z-index:300;
   }
   .exit-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- 세로 공간이 부족해지면: 제목/학교명/구분선을 숨기고 검색창 위주로 남김 ---------- */
+  @media (max-height: 760px){
+    html, body{height:100%;overflow:hidden;}
+    body{padding:10px 16px;}
+    .wrap{height:100%;display:flex;flex-direction:column;}
+    .masthead{flex:0 0 auto;padding-top:14px;padding-bottom:10px;}
+    .masthead .school{display:none;}
+    .masthead h1{display:none;}
+    .masthead .rule{display:none;}
+    .legend{display:none;}
+    .controls{margin-top:0;gap:8px;flex-wrap:nowrap;}
+    .tabs{padding:3px;flex-shrink:0;}
+    .tab-btn{padding:6px 10px;font-size:12.5px;}
+    .search-box{min-width:0;flex:1;}
+    .search-box input{padding:7px 10px;font-size:13px;}
+    .class-select-box{min-width:0;}
+    .class-select-box select{padding:7px 8px;font-size:13px;}
+    .layout{flex:1 1 auto;min-height:0;margin-top:10px;}
+    .main{height:100%;display:flex;flex-direction:column;}
+    .card{flex:1 1 auto;padding-top:14px;overflow-y:auto;min-height:0;}
+    .sidebar{max-height:100%;}
+    .masthead.winsize-active .controls{padding-right:205px;}
+  }
+  @media (max-height: 560px){
+    .masthead{padding-top:8px;padding-bottom:6px;}
+    .masthead .controls{margin-top:0;}
+    .table-wrap{padding-top:8px;}
+    .swap-hint{display:none;}
+  }
 
   @media print{
     body{background:#fff !important;padding:0;}
@@ -496,6 +555,7 @@
   <div class="masthead">
     <div class="winsize-group" id="winsizeGroup" style="display:none;">
       <button class="winsize-btn" data-size="small" title="작게">작게</button>
+      <button class="winsize-btn" data-size="medium" title="중간">중간</button>
       <button class="winsize-btn" data-size="large" title="크게">크게</button>
       <button class="winsize-btn" data-size="max" title="전체화면">전체</button>
     </div>
@@ -1168,36 +1228,51 @@ function renderClass(cls){
 // ---- 마지막으로 보던 화면 기억하기 (localStorage) ----
 const LAST_VIEW_KEY = 'yeungnam_timetable_last_view';
 function saveLastView(){
-  try{
-    localStorage.setItem(LAST_VIEW_KEY, JSON.stringify({mode, key:selectedKey}));
-  }catch(e){}
+  const payload = JSON.stringify({mode, key:selectedKey});
+  if(typeof Neutralino !== 'undefined'){
+    Neutralino.storage.setData(LAST_VIEW_KEY, payload).catch(()=>{});
+  } else {
+    try{ localStorage.setItem(LAST_VIEW_KEY, payload); }catch(e){}
+  }
 }
+
+function applyRestoredView(data){
+  if(!data) return false;
+  if(data.mode==='teacher'){
+    const t = TEACHERS.find(x=>x.name===data.key);
+    if(!t) return false;
+    mode = 'teacher';
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='teacher'));
+    teacherSearchBox.style.display = '';
+    classSelectBox.style.display = 'none';
+    sidebarTitle.textContent = `교사 목록 (${TEACHERS.length})`;
+    select(t);
+    return true;
+  }
+  if(data.mode==='class'){
+    if(!classSchedule[data.key]) return false;
+    mode = 'class';
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='class'));
+    teacherSearchBox.style.display = 'none';
+    classSelectBox.style.display = '';
+    sidebarTitle.textContent = `학급 목록 (${classList.length})`;
+    select(data.key);
+    return true;
+  }
+  return false;
+}
+
 function restoreLastView(){
+  if(typeof Neutralino !== 'undefined'){
+    Neutralino.storage.getData(LAST_VIEW_KEY)
+      .then(raw=> applyRestoredView(JSON.parse(raw)))
+      .catch(()=>{}); // 저장된 값이 없으면 그냥 기본 화면 유지
+    return;
+  }
   try{
     const raw = localStorage.getItem(LAST_VIEW_KEY);
     if(!raw) return false;
-    const data = JSON.parse(raw);
-    if(data.mode==='teacher'){
-      const t = TEACHERS.find(x=>x.name===data.key);
-      if(!t) return false;
-      mode = 'teacher';
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='teacher'));
-      teacherSearchBox.style.display = '';
-      classSelectBox.style.display = 'none';
-      sidebarTitle.textContent = `교사 목록 (${TEACHERS.length})`;
-      select(t);
-      return true;
-    }
-    if(data.mode==='class'){
-      if(!classSchedule[data.key]) return false;
-      mode = 'class';
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode==='class'));
-      teacherSearchBox.style.display = 'none';
-      classSelectBox.style.display = '';
-      sidebarTitle.textContent = `학급 목록 (${classList.length})`;
-      select(data.key);
-      return true;
-    }
+    return applyRestoredView(JSON.parse(raw));
   }catch(e){}
   return false;
 }
@@ -1489,7 +1564,6 @@ function renderCoverPreview(teacherObj, day, period, entry, candName){
   const getPeriodC = (d,p)=> (after[d]||[]).find(x=>x.period===p);
 
   const html = `
-    <button class="swap-back" id="coverBackBtn">← 목록으로</button>
     <div class="modal-title">보강 후 미리보기</div>
     <div class="modal-sub">${candName} 선생님이 ${day} ${period}교시 ${entry.class||''} 수업을 보강하면 시간표가 이렇게 됩니다</div>
     <div class="swap-preview-grids">
@@ -1503,7 +1577,6 @@ function renderCoverPreview(teacherObj, day, period, entry, candName){
     <div class="swap-note">🟢 신규 = 이번에 새로 보강을 맡게 되는 칸입니다. 그 날 다른 수업들과 겹치거나 너무 몰리지 않는지 확인해보세요. 실제 보강 요청은 학교 협의 절차를 따로 거쳐야 해요.</div>
   `;
   setModalContent(html, ()=>{
-    document.getElementById('coverBackBtn').addEventListener('click', ()=> history.back());
     const buildMsg = ()=> `안녕하세요, 선생님. ${teacherObj.name}입니다.\n\n${day} ${period}교시(${entry.class||''}) 수업 보강 가능하실까요?\n\n가능하시면 말씀해 주시면 감사하겠습니다.`;
     wireRequestButtons('copyCoverReqBtn', 'shareCoverReqBtn', buildMsg);
   }, 'medium');
@@ -1533,7 +1606,6 @@ function renderSwapPreview(teacherObj, day, period, entry, cand){
   const getPeriodB = (d,p)=> (afterB[d]||[]).find(x=>x.period===p);
 
   const html = `
-    <button class="swap-back" id="swapBackBtn">← 목록으로</button>
     <div class="modal-title">교체 미리보기</div>
     <div class="modal-sub">${teacherObj.name} 선생님의 ${day} ${period}교시 ↔ ${cand.teacher} 선생님의 ${cand.day} ${cand.period}교시</div>
     <div class="swap-preview-grids">
@@ -1551,7 +1623,6 @@ function renderSwapPreview(teacherObj, day, period, entry, cand){
     <div class="swap-note">🟡 비워짐 = 원래 있던 수업이 빠지는 칸 · 🟢 신규 = 교체로 새로 들어오는 칸. 실제 교체는 학교 협의 절차를 따로 거쳐야 해요.</div>
   `;
   setModalContent(html, ()=>{
-    document.getElementById('swapBackBtn').addEventListener('click', ()=> history.back());
     const buildMsg = ()=> `안녕하세요, 선생님. ${teacherObj.name}입니다.\n\n${day} ${period}교시(${entry.class||''}) ↔ ${cand.day} ${cand.period}교시(${entry.class||''}) 수업 교체 가능하실까요?\n\n가능하시면 말씀해 주시면 감사하겠습니다.`;
     wireRequestButtons('copySwapReqBtn', 'shareSwapReqBtn', buildMsg);
   }, 'wide');
@@ -1621,7 +1692,13 @@ window.addEventListener('popstate', (e)=>{
   }
 });
 
-document.getElementById('swapModalClose').addEventListener('click', closeSwapModal);
+document.getElementById('swapModalClose').addEventListener('click', ()=>{
+  if(modalDepth === 2){
+    history.back();
+  } else {
+    closeSwapModal();
+  }
+});
 swapModal.addEventListener('click', e=>{ if(e.target===swapModal) closeSwapModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeSwapModal(); });
 
@@ -1635,12 +1712,30 @@ card.addEventListener('click', e=>{
   openSwapModal(currentTeacherObj, day, period, entry);
 });
 
-// 데스크톱 앱(Electron)으로 실행 중일 때만 창 크기 전환 버튼을 보여줌
+// 데스크톱 앱(Electron 또는 Neutralino)으로 실행 중일 때만 창 크기 전환 버튼을 보여줌
 if (window.electronAPI) {
   const winsizeGroup = document.getElementById('winsizeGroup');
   winsizeGroup.style.display = 'flex';
+  document.querySelector('.masthead').classList.add('winsize-active');
   winsizeGroup.querySelectorAll('.winsize-btn').forEach(btn=>{
     btn.addEventListener('click', () => window.electronAPI.setWindowSize(btn.dataset.size));
+  });
+} else if (typeof Neutralino !== 'undefined') {
+  const winsizeGroup = document.getElementById('winsizeGroup');
+  winsizeGroup.style.display = 'flex';
+  document.querySelector('.masthead').classList.add('winsize-active');
+  const NEU_SIZES = { small: [640, 670], medium: [640, 1000], large: [1030, 1000] };
+  winsizeGroup.querySelectorAll('.winsize-btn').forEach(btn=>{
+    btn.addEventListener('click', async () => {
+      const size = btn.dataset.size;
+      if(size === 'max'){
+        await Neutralino.window.maximize();
+      } else {
+        const [w, h] = NEU_SIZES[size];
+        await Neutralino.window.unmaximize();
+        await Neutralino.window.setSize({width: w, height: h});
+      }
+    });
   });
 }
 
