@@ -76,7 +76,21 @@
     uploadBtn.disabled = true;
     setStatus('업로드 중...');
     try{
-      const payload = { ...DATA, updatedAt: new Date().toISOString() };
+      // Firestore 호환을 위해 2차원 배열 구조를 객체 배열 구조로 안전하게 맵핑 변환
+      const sanitizedElectiveBlocks = DATA.electiveBlocks.map(block => ({
+        ...block,
+        slots: block.slots.map(slot => ({
+          day: slot[0],
+          period: slot[1]
+        }))
+      }));
+
+      const payload = { 
+        ...DATA, 
+        electiveBlocks: sanitizedElectiveBlocks, 
+        updatedAt: new Date().toISOString() 
+      };
+
       await setDoc(doc(db, 'appdata', 'main'), payload);
       setStatus('✅ 업로드 완료!\n선생님 ' + DATA.teachers.length + '명, 내선번호 ' + Object.keys(DATA.extMap).length + '건, 시정표 ' + DATA.bellSchedule.length + '개 교시, 묶음과목 ' + DATA.electiveBlocks.length + '개 묶음.\n\n이제 이 파일은 안전하게 닫고 폐기하셔도 됩니다.', 'ok');
     }catch(e){
